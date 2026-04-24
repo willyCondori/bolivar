@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Models\Socio;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\ReporteController;
 
 /*
 |--------------------------------------------------------------------------
@@ -84,6 +85,13 @@ Route::middleware(['auth'])->group(function () {
         ]);
 
     })->middleware(['auth'])->name('socio.panel');    
+
+    Route::get('/reportes/ingresos', function () {
+        return Inertia::render('Accesos/Reportes/ReporteIngresos');
+    })->name('reportes.ingresos');
+
+    // API
+    Route::get('/api/reportes/ingresos', [ReporteController::class, 'ingresos']);
 });
 
 require __DIR__.'/auth.php';

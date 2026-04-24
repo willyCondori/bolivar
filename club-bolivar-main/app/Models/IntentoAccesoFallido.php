@@ -5,26 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-class Acceso extends Model
+class IntentoAccesoFallido extends Model
 {
-    protected $table = 'accesos';
+    protected $table = 'intentos_acceso_fallidos';
     public $timestamps = false;
 
     protected $fillable = [
         'id',
         'socio_id',
-        'user_id',
         'dispositivo_id',
-        'tipo',
-        'metodo_verificacion',
-        'resultado_pdi',
+        'foto_captura_path',
         'similitud_facial',
         'ip_dispositivo',
-        'dispositivo_info'
-    ];
-
-    protected $casts = [
-        'created_at' => 'datetime',
+        'motivo_rechazo'
     ];
 
     protected static function boot()
@@ -36,8 +29,13 @@ class Acceso extends Model
         });
     }
 
+    // 🔥 RELACIÓN (CLAVE PARA QUE NO ROMPA)
     public function socio()
     {
         return $this->belongsTo(Socio::class);
     }
+
+    protected $casts = [
+        'created_at' => 'datetime',
+    ];
 }
