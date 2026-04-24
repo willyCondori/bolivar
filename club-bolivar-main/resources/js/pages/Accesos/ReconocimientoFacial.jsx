@@ -2,6 +2,8 @@
     import { Link, usePage, router } from '@inertiajs/react';
     import AppSidebarLayout from '@/Layouts/AppSidebarLayout';
     import axios from 'axios';
+    import { Html5Qrcode } from "html5-qrcode";
+
 
     export default function ReconocimientoFacial() {
         const { auth } = usePage().props;
@@ -14,9 +16,25 @@
         const [reconResult, setReconResult] = useState(null);  // null | objeto respuesta
         const [loading,     setLoading]     = useState(false);
         const [tipo, setTipo] = useState('entrada');
+        const [modo, setModo] = useState('facial'); // facial | qr
+        const qrScannerRef = useRef(null);
+        const qrStartedRef = useRef(false);
         const canUseCamera = useMemo(() =>
             typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
         , []);
+        const stopQR = async () => {
+            try {
+                if (qrScannerRef.current && qrStartedRef.current) {
+                    await qrScannerRef.current.stop();
+                    await qrScannerRef.current.clear();
+                }
+            } catch (e) {
+                console.log("QR ya detenido");
+            } finally {
+                qrScannerRef.current = null;
+                qrStartedRef.current = false;
+            }
+        };
 
         // Limpiar cámara al desmontar
         useEffect(() => {
@@ -24,6 +42,29 @@
                 streamRef.current?.getTracks().forEach(t => t.stop());
             };
         }, []);
+
+        useEffect(() => {
+            if (modo === 'qr') {
+                const init = async () => {
+                    await stopQR(); // limpiar primero
+
+                    setTimeout(() => {
+                        startQR();
+                    }, 300);
+                };
+
+                init();
+            }
+
+            if (modo === 'facial') {
+                stopQR();
+                stopCamera();
+            }
+
+            return () => {
+                stopQR();
+            };
+        }, [modo]);
 
         /* ── Cámara ─────────────────────────────────────────────────────────── */
         const startCamera = async () => {
@@ -63,7 +104,81 @@
             setError(null);
             setReconResult(null);
         };
+        
+        const qrInitializingRef = useRef(false);
 
+        const startQR = async () => {
+            if (qrStartedRef.current) return; // evita duplicados
+            qrInitializingRef.current = true;
+
+
+            setError(null);
+            setReconResult(null);
+
+            try {
+                // 🔥 limpiar antes de iniciar
+                await stopQR();
+
+                // 🔥 esperar DOM (IMPORTANTE)
+                setTimeout(async () => {
+                    const element = document.getElementById("qr-reader");
+
+                    if (!element) {
+                        console.error("QR container no existe aún");
+                        return;
+                    }
+
+                    const html5QrCode = new Html5Qrcode("qr-reader");
+                    qrScannerRef.current = html5QrCode;
+
+                    await html5QrCode.start(
+                        { facingMode: "environment" },
+                        { fps: 10, qrbox: 250 },
+
+                        async (decodedText) => {
+                            console.log("QR leído:", decodedText);
+
+                            await stopQR(); // evitar múltiples lecturas
+                            await procesarQR(decodedText);
+                        },
+
+                        () => {}
+                    );
+
+                    qrStartedRef.current = true;
+                    qrInitializingRef.current = false;
+                }, 300);
+
+            } catch (err) {
+                console.error(err);
+                setError("No se pudo iniciar el lector QR");
+            }
+        };
+
+        const procesarQR = async (codigo) => {
+            console.log("procesarQR recibió:", JSON.stringify(codigo)); // ← agrega esto
+
+            if (!codigo) return; // evita basura
+    
+            setLoading(true);
+            setReconResult(null);
+
+            try {
+                const res = await axios.post('/api/accesos/qr', {
+                    codigo: codigo,
+                    tipo: tipo // entrada o salida
+                });
+
+                setReconResult(res.data);
+            } catch (e) {
+                setReconResult({
+                    estado: 'error',
+                    mensaje: 'Error procesando QR'
+                });
+            } finally {
+                setLoading(false);
+            }
+        };        
         /* ── Capturar frame y enviar a Laravel ──────────────────────────────── */
         const reconocer = async () => {
             if (!videoRef.current || status !== 'running') return;
@@ -381,24 +496,34 @@
                         </p>
 
                         <div className="rf-videoWrap">
-                            {/* El video siempre existe, pero solo se muestra si el status es running */}
-                            <video 
-                                ref={videoRef} 
-                                className="rf-video" 
-                                style={{ display: status === 'running' ? 'block' : 'none' }}
-                                playsInline 
-                                muted 
-                            />
-                            
-                            {status !== 'running' && (
+                            {modo === 'facial' && (
+                                <video 
+                                    ref={videoRef} 
+                                    className="rf-video"
+                                    style={{ display: status === 'running' ? 'block' : 'none' }}
+                                    playsInline 
+                                    muted 
+                                />
+                            )}
+
+                            {modo === 'qr' && (
+                                <div
+                                    id="qr-reader"
+                                    style={{
+                                        width: '100%',
+                                        minHeight: '300px',
+                                        borderRadius: '12px',
+                                        overflow: 'hidden'
+                                    }}
+                                />
+                            )}
+
+                            {modo === 'facial' && status !== 'running' && (
                                 <div className="rf-placeholder">
-                                    {status === 'requesting'
-                                        ? 'Solicitando permiso de cámara…'
-                                        : 'Vista previa de cámara'}
+                                    Vista previa de cámara
                                 </div>
                             )}
                         </div>
-
                         <div className="rf-actions">
                            
                             <button
@@ -443,133 +568,139 @@
 
                     {/* ── Panel derecho: resultado ─────────────────────────────── */}
                     <div className="rf-card">
-                        <h2 className="rf-noteTitle">Checklist operativo</h2>
-                        <p className="rf-noteText">
-                            — Iluminación frontal y estable.<br />
-                            — Evitar gorras / lentes oscuros.<br />
-                            — Confirmar que el socio esté activo antes de validar.
-                        </p>
+
+                        {/* 🔵 MODO DE ACCESO */}
+                        <h2 className="rf-noteTitle">Modo de acceso</h2>
 
                         <div className="rf-actions">
-                                <button
-                                    type="button"
-                                    className={`rf-btn ${tipo === 'entrada' ? 'rf-btnPrimary' : ''}`}
-                                    onClick={() => setTipo('entrada')}
-                                >
-                                    Entrada
-                                </button>
+                            <button
+                                className={`rf-btn ${modo === 'facial' ? 'rf-btnPrimary' : ''}`}
+                                onClick={() => {
+                                    setModo('facial');
+                                    stopCamera();
+                                }}
+                            >
+                                Reconocimiento Facial
+                            </button>
 
-                                <button
-                                    type="button"
-                                    className={`rf-btn ${tipo === 'salida' ? 'rf-btnPrimary' : ''}`}
-                                    onClick={() => setTipo('salida')}
-                                >
-                                    Salida
-                                </button>
-                            </div>
+                            <button
+                                className={`rf-btn ${modo === 'qr' ? 'rf-btnPrimary' : ''}`}
+                                onClick={() => {
+                                    setModo('qr');
+                                    stopCamera();
+                                }}
+                            >
+                                Escanear QR
+                            </button>
+                        </div>
 
-                        {/* Resultado dinámico */}
-                        <div
-                            className="rf-result"
-                            style={{ background: resultBg, border: `1px solid ${resultBorder}` }}
-                        >
-                            {/* Estado vacío */}
-                            {!reconResult && !loading && (
+                        {/* 🟣 TIPO DE ACCESO */}
+                        <h2 className="rf-noteTitle" style={{ marginTop: '1.5rem' }}>
+                            Tipo de acceso
+                        </h2>
+
+                        <div className="rf-actions">
+                            <button
+                                className={`rf-btn ${tipo === 'entrada' ? 'rf-btnPrimary' : ''}`}
+                                onClick={() => setTipo('entrada')}
+                            >
+                                Entrada
+                            </button>
+
+                            <button
+                                className={`rf-btn ${tipo === 'salida' ? 'rf-btnPrimary' : ''}`}
+                                onClick={() => setTipo('salida')}
+                            >
+                                Salida
+                            </button>
+                        </div>
+
+                        {/* 🟢 CONTROLES DINÁMICOS */}
+                        <h2 className="rf-noteTitle" style={{ marginTop: '1.5rem' }}>
+                            Acciones
+                        </h2>
+
+                        <div className="rf-actions">
+
+                            {modo === 'facial' && (
                                 <>
-                                    <p className="rf-noteTitle">Resultado</p>
-                                    <p className="rf-noteText">
-                                        Presioná <strong>Reconocer</strong> para identificar al socio.
-                                        El resultado de coincidencia, membresía y registro de acceso
-                                        aparecerán aquí.
-                                    </p>
+                                    <button
+                                        className="rf-btn rf-btnPrimary"
+                                        onClick={startCamera}
+                                        disabled={status === 'running'}
+                                    >
+                                        Iniciar cámara
+                                    </button>
+
+                                    <button
+                                        className="rf-btn rf-btnRecon"
+                                        onClick={reconocer}
+                                        disabled={status !== 'running' || loading}
+                                    >
+                                        {loading ? 'Analizando…' : 'Reconocer'}
+                                    </button>
+
+                                    <button
+                                        className="rf-btn"
+                                        onClick={stopCamera}
+                                        disabled={status !== 'running'}
+                                    >
+                                        Detener
+                                    </button>
                                 </>
                             )}
 
-                            {/* Cargando */}
-                            {loading && (
-                                <p className="rf-noteText" style={{ margin: 0 }}>
-                                    <span className="rf-spinner" />
-                                    Analizando rostro con el modelo…
+                            {modo === 'qr' && (
+                                <>
+                                    <button
+                                        className="rf-btn rf-btnPrimary"
+                                        onClick={startQR}
+                                    >
+                                        Iniciar escaneo QR
+                                    </button>
+                                </>
+                            )}
+
+                        </div>
+
+                        {/* 📊 RESULTADO */}
+                        <div
+                            className="rf-result"
+                            style={{ background: resultBg, border: `1px solid ${resultBorder}`, marginTop: '1.5rem' }}
+                        >
+                            {!reconResult && !loading && (
+                                <p className="rf-noteText">
+                                    Esperando acción...
                                 </p>
                             )}
 
-                            {/* Éxito */}
-                            {!loading && reconResult?.estado === 'exito' && (
+                            {loading && (
+                                <p className="rf-noteText">
+                                    Procesando...
+                                </p>
+                            )}
+
+                            {reconResult?.estado === 'exito' && (
                                 <>
                                     <span className="rf-resultIcon">✅</span>
-                                    <p className="rf-noteText" style={{ margin: 0 }}>Persona identificada</p>
                                     <p className="rf-resultName">
                                         {reconResult.nombres} {reconResult.apellidos}
-                                    </p>
-                                    <p className="rf-resultSub">
-                                        Similitud: {(1 - reconResult.distancia).toFixed(2) * 100}%
-                                        &nbsp;·&nbsp;
-                                        Distancia: {reconResult.distancia}
                                     </p>
                                     <span className="rf-badge rf-badgeOk">Acceso permitido</span>
                                 </>
                             )}
 
-                            {/* Fallo */}
-                            {!loading && reconResult?.estado === 'fallo' && (
+                            {reconResult?.estado === 'fallo' && (
                                 <>
                                     <span className="rf-resultIcon">❌</span>
-
                                     <p className="rf-resultName" style={{ color: '#fb7185' }}>
-                                        Usuario no identificado
-                                    </p>
-
-                                    <p className="rf-resultSub">
-                                        El rostro no coincide con ningún socio registrado.
-                                    </p>
-
-                                    <span className="rf-badge rf-badgeFail">
                                         Acceso denegado
-                                    </span>
-                                </>
-                            )}
-
-                            {/* Error de conexión */}
-                            {!loading && reconResult?.estado === 'error' && (
-                                <p className="rf-noteText" style={{ margin: 0, color: '#fb7185' }}>
-                                    ⚠️ {reconResult.mensaje}
-                                </p>
-                            )}
-                            {/* Bloqueo temporal */}
-                            {!loading && reconResult?.estado === 'bloqueado' && (
-                                <>
-                                    <span className="rf-resultIcon">⛔</span>
-
-                                    <p className="rf-resultName" style={{ color: '#fbbf24' }}>
-                                        Acceso bloqueado
                                     </p>
-
-                                    <p className="rf-resultSub">
-                                        Este socio ya registró un acceso reciente. Intenta nuevamente en unos minutos.
-                                    </p>
-
-                                    <span
-                                        className="rf-badge"
-                                        style={{
-                                            background: 'rgba(251,191,36,.15)',
-                                            color: '#fbbf24',
-                                            border: '1px solid rgba(251,191,36,.3)'
-                                        }}
-                                    >
-                                        Control anti-doble ingreso
-                                    </span>
                                 </>
                             )}
                         </div>
 
-                        {status === 'blocked' && (
-                            <div className="rf-alert">
-                                Permiso de cámara bloqueado. Revisá permisos del navegador para
-                                <code>http://127.0.0.1:8001</code> y volvé a intentar.
-                            </div>
-                        )}
                     </div>
-
                 </div>
             </AppSidebarLayout>
         );

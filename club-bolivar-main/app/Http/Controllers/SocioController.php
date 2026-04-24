@@ -50,7 +50,6 @@ class SocioController extends Controller
             'ci' => ['required','digits:8','unique:socios,ci'],
             'telefono' => ['required','digits:8','regex:/^[67][0-9]{7}$/'],
 
-            // 🔥 CORREGIDO
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6|confirmed',
 
@@ -94,6 +93,8 @@ class SocioController extends Controller
                 'deleted' => 0,
                 'email' => $request->email,
                 'user_id' => $user->id,
+                'qr_token' => $qrToken,
+
             ]);
         });
 
