@@ -37,10 +37,14 @@ export default function Dashboard() {
                             <div className="dashboard-stat-label">Control y seguimiento</div>
                             <div className="dashboard-stat-cta">Reconocimiento facial →</div>
                         </Link>
-                        <div className="dashboard-stat">
+                        <Link
+                            href={route('reportes.ingresos')}
+                            className="dashboard-stat dashboard-stat-link"
+                        >
                             <div className="dashboard-stat-num">Reportes</div>
-                            <div className="dashboard-stat-label">Visión del sistema</div>
-                        </div>
+                            <div className="dashboard-stat-label">Ingresos del sistema</div>
+                            <div className="dashboard-stat-cta">Ver reporte de ingresos →</div>
+                        </Link>
                     </div>
                 </div>
 
