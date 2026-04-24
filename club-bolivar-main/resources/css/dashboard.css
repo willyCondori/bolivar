@@ -1,0 +1,88 @@
+/* ═══════════════════════════════════════════════════════════════
+   CLUB BOLÍVAR — DASHBOARD
+   Estilos exclusivos del panel de control.
+   Requiere: colors.css, components.css
+═══════════════════════════════════════════════════════════════ */
+
+.dashboard-root {
+  min-height: 100vh;
+  background: var(--bg-base);
+  transition: var(--transicion);
+}
+
+/* ── Línea decorativa de acento en navbar del dashboard ── */
+.navbar-dashboard {
+  border-bottom: 1px solid var(--bolivar-4);
+}
+.navbar-dashboard::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--bolivar-1), transparent);
+  opacity: 0.4;
+}
+
+/* ── Contenido principal ── */
+.dashboard-main {
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ── Encabezado de sección ── */
+.dashboard-header {
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.dashboard-titulo {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--texto-primario);
+}
+.dashboard-subtitulo {
+  font-size: 0.8rem;
+  color: var(--texto-muted);
+  margin-top: 3px;
+}
+
+/* ── Celda de tabla con texto muted ── */
+.td-muted { color: var(--texto-muted); }
+
+/* ── Estado vacío ── */
+.tabla-vacia {
+  padding: 2rem;
+  text-align: center;
+  color: var(--texto-muted);
+  font-size: 0.85rem;
+}
+
+/* ── Cargando ── */
+.dashboard-cargando {
+  padding: 2rem;
+  text-align: center;
+  color: var(--texto-muted);
+  font-size: 0.85rem;
+}
+.dashboard-cargando::after {
+  content: '';
+  display: inline-block;
+  width: 16px; height: 16px;
+  border: 2px solid var(--borde);
+  border-top-color: var(--bolivar-1);
+  border-radius: 50%;
+  animation: dashSpin .7s linear infinite;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+@keyframes dashSpin { to { transform: rotate(360deg); } }
+
+/* ── Responsivo ── */
+@media (max-width: 768px) {
+  .dashboard-main { padding: 1rem; }
+  .dashboard-header { flex-direction: column; align-items: flex-start; }
+}
