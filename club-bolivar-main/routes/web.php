@@ -39,10 +39,22 @@ Route::middleware(['auth'])->group(function () {
     // ===============================
     Route::prefix('accesos')->group(function () {
 
+        // Ruta legacy — redirige al nuevo módulo facial
         Route::get('/reconocimiento', fn() =>
-            Inertia::render('Accesos/ReconocimientoFacial')
+            redirect()->route('accesos.facial')
         )->name('reconocimiento.index');
 
+        // ── Reconocimiento Facial ──────────────────────────────────────────
+        Route::get('/ingresos/facial', fn() =>
+            Inertia::render('Accesos/ingresos/ReconocimientoFacial')
+        )->name('accesos.facial');
+
+        // ── Escaneo QR ────────────────────────────────────────────────────
+        Route::get('/ingresos/qr', fn() =>
+            Inertia::render('Accesos/ingresos/EscaneoQR')
+        )->name('accesos.qr');
+
+        // ── API de reconocimiento facial (POST) ───────────────────────────
         Route::post('/reconocer', [ReconocimientoController::class, 'verificar'])
             ->name('accesos.reconocer');
     });
@@ -76,8 +88,8 @@ Route::middleware(['auth'])->group(function () {
         $socio = Socio::where('user_id', $user->id)->first();
 
         return Inertia::render('Accesos/Socios/Panel', [
-            'user' => $user,
-            'socio' => $socio
+            'user'  => $user,
+            'socio' => $socio,
         ]);
 
     })->name('socio.panel');
