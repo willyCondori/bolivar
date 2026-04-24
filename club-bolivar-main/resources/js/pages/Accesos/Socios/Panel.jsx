@@ -1,5 +1,6 @@
 import AppSidebarLayout from '@/Layouts/AppSidebarLayout';
 import { Head } from '@inertiajs/react';
+import { QRCodeCanvas } from 'qrcode.react';
 
 export default function Panel({ user, socio }) {
     return (
@@ -22,7 +23,19 @@ export default function Panel({ user, socio }) {
                             <p className="text-xl font-mono font-bold tracking-tighter text-white">{socio?.numero_socio}</p>
                         </div>
                     </div>
-
+                    <div style={{
+                        position: 'absolute',
+                        bottom: '20px',
+                        right: '20px',
+                        background: 'white',
+                        padding: '10px',
+                        borderRadius: '12px'
+                    }}>
+                    <QRCodeCanvas
+                        value={socio?.qr_token || ''}
+                        size={120}
+                    />
+                    </div>
                     {/* 📋 Contenido Principal */}
                     <div style={{ display: 'flex', flexDirection: 'row', minHeight: '420px' }}>
 
@@ -85,13 +98,7 @@ export default function Panel({ user, socio }) {
                         </div>
                     </div>
 
-                    {/* ✨ Footer */}
-                    <div style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(12px)', textAlign: 'center', padding: '14px', fontSize: '11px', color: '#6b7280', display: 'flex', justifyContent: 'center', gap: '24px', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                        <span style={{ opacity: 0.5, letterSpacing: '3px', textTransform: 'uppercase' }}>Sistema de Control de Acceso</span>
-                        <div style={{ width: '4px', height: '4px', backgroundColor: '#374151', borderRadius: '50%' }}></div>
-                        <span style={{ fontWeight: '700', color: '#9ca3af' }}>BOLÍVAR 2026 • IA + QR</span>
-                    </div>
-
+                   
                 </div>
             </div>
         </AppSidebarLayout>

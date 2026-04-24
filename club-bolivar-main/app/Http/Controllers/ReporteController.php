@@ -4,44 +4,47 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Acceso;
-use App\Models\IntentoAccesoFallido;
+use Illuminate\Support\Facades\DB;
 
 class ReporteController extends Controller
 {
     public function ingresos(Request $request)
     {
         try {
+
             $fecha = $request->fecha;
             $tipo = $request->tipo;
 
-            // 🔹 ACCESOS VALIDOS
-            $accesos = Acceso::with('socio')
-                ->when($fecha, function ($query) use ($fecha) {
-                    $query->whereRaw("DATE(created_at) = ?", [$fecha]);
-                })
-                ->when($tipo && $tipo !== 'todos', function ($query) use ($tipo) {
-                    $query->where('tipo', $tipo);
-                })
-                ->get();
+            $query = Acceso::query()
+                ->leftJoin('socios', 'accesos.socio_id', '=', 'socios.id')
+                ->select(
+                    'accesos.created_at as fecha',
+                    'socios.nombres',
+                    'socios.apellidos',
+                    'accesos.tipo',
+                    DB::raw("'correcto' as estado")
+                );
 
-            // 🔹 ACCESOS FALLIDOS
-            $fallidos = IntentoAccesoFallido::with('socio')
-                ->when($fecha, function ($query) use ($fecha) {
-                    $query->whereDate('created_at', $fecha);
-                })
-                ->get();
+            if ($fecha) {
+                $query->whereDate('accesos.created_at', $fecha);
+            }
+
+            if ($tipo && $tipo !== 'todos') {
+                $query->where('accesos.tipo', $tipo);
+            }
+
+            $accesos = $query->get();
 
             return response()->json([
                 'accesos' => $accesos,
-                'fallidos' => $fallidos
+                'fallidos' => [] // luego puedes integrar
             ]);
 
         } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Error en el servidor',
-                'message' => $e->getMessage(),
-                'line' => $e->getLine()
 
+            return response()->json([
+                'error' => true,
+                'mensaje' => $e->getMessage()
             ], 500);
         }
     }

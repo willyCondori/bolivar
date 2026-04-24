@@ -6,8 +6,15 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Http\Controllers\Api\SocioRegistrationController;
-// Ruta de login
+use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\AccesoQRController;
+
+
+// ===============================
+// 🔹 LOGIN
+// ===============================
 Route::post('/login', function (Request $request) {
+
     $user = User::where('email', $request->email)->first();
 
     if (!$user || !Hash::check($request->password, $user->password)) {
@@ -26,24 +33,37 @@ Route::post('/login', function (Request $request) {
     ]);
 });
 
-// Rutas protegidas
+
+// ===============================
+// 🔹 REPORTES (SIN AUTH para pruebas)
+// ===============================
+Route::get('/reportes/ingresos', [ReporteController::class, 'ingresos']);
+
+
+// ===============================
+// 🔹 QR
+// ===============================
+Route::post('/accesos/qr', [AccesoQRController::class, 'validarQR']);
+
+
+// ===============================
+// 🔹 PROTEGIDAS (SANCTUM)
+// ===============================
 Route::middleware('auth:sanctum')->group(function () {
 
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
+    Route::get('/user', fn(Request $request) => $request->user());
 
     Route::get('/audit-logs', function () {
-        $logs = DB::table('audit_logs')
+        return DB::table('audit_logs')
             ->orderBy('fecha_hora', 'desc')
             ->limit(50)
             ->get();
-        return response()->json($logs);
     });
 
     Route::post('/logout', function (Request $request) {
         $request->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'Sesión cerrada']);
     });
+
     Route::post('/socios/registro', [SocioRegistrationController::class, 'store']);
 });
