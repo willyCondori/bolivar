@@ -1,0 +1,285 @@
+/* ═══════════════════════════════════════════════════════════════
+   CLUB BOLÍVAR — LOGIN
+   Estilos exclusivos de la página de login.
+   Requiere: colors.css, components.css
+═══════════════════════════════════════════════════════════════ */
+
+.lb-root {
+  min-height: 100vh;
+  background: var(--bg-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Orbes de fondo ── */
+.lb-orb { position: absolute; border-radius: 50%; pointer-events: none; }
+.lb-orb-1 {
+  width: 260px; height: 260px;
+  top: -50px; left: -70px;
+  background: radial-gradient(circle, rgba(28,224,235,0.07), transparent 70%);
+  animation: orbFloat 7s ease-in-out infinite;
+}
+.lb-orb-2 {
+  width: 180px; height: 180px;
+  bottom: 30px; right: -30px;
+  background: radial-gradient(circle, rgba(30,236,247,0.05), transparent 70%);
+  animation: orbFloat 9s ease-in-out infinite reverse;
+}
+@keyframes orbFloat {
+  0%,100% { transform: translate(0,0); }
+  33%     { transform: translate(10px,-14px); }
+  66%     { transform: translate(-6px,8px); }
+}
+
+/* ── Botón tema flotante ── */
+.lb-tema-btn {
+  position: absolute;
+  top: 14px; right: 14px;
+  z-index: 20;
+}
+
+/* ── Card del login ── */
+.lb-card {
+  background: var(--bg-superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  padding: 28px 30px;
+  width: 100%;
+  max-width: 380px;
+  position: relative;
+  z-index: 10;
+  transition: box-shadow .3s ease;
+}
+.lb-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--bolivar-1), transparent);
+  opacity: 0;
+  transition: opacity .3s;
+}
+.lb-card:hover::before { opacity: 1; }
+.lb-card:hover { box-shadow: 0 0 36px rgba(28,224,235,0.08); }
+
+/* ── Header ── */
+.lb-header { text-align: center; margin-bottom: 22px; }
+.lb-logo {
+  width: 60px; height: 60px;
+  margin: 0 auto 10px;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(28,224,235,0.25));
+}
+.lb-logo-fallback {
+  width: 60px; height: 60px;
+  background: linear-gradient(135deg, var(--bolivar-1), var(--bolivar-3));
+  border-radius: 50%;
+  margin: 0 auto 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; font-weight: 900; color: #050e10;
+}
+.lb-header h2 {
+  color: var(--texto-primario);
+  font-size: 1.45rem; font-weight: 700;
+  margin-bottom: 3px;
+  letter-spacing: -0.02em;
+}
+.lb-header p { color: var(--texto-muted); font-size: 13px; }
+
+/* ── Grupos de input ── */
+.lb-group { margin-bottom: 16px; }
+.lb-input-wrap { position: relative; }
+
+.lb-input-wrap input {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-sm);
+  padding: 20px 42px 6px 14px;
+  color: var(--texto-primario);
+  font-size: 14px;
+  outline: none;
+  transition: border-color .25s, box-shadow .25s;
+}
+.lb-input-wrap input[type="password"] { letter-spacing: 0.12em; }
+.lb-input-wrap input:focus {
+  border-color: var(--borde-focus);
+  box-shadow: 0 0 0 3px rgba(28,224,235,0.08);
+}
+
+/* Label flotante */
+.lb-input-wrap label {
+  position: absolute;
+  left: 14px; top: 13px;
+  color: var(--texto-muted);
+  font-size: 14px;
+  pointer-events: none;
+  transition: all .25s cubic-bezier(.4,0,.2,1);
+  transform-origin: left top;
+}
+.lb-input-wrap input:focus + label,
+.lb-input-wrap input:not(:placeholder-shown) + label {
+  transform: translateY(-8px) scale(0.76);
+  color: var(--bolivar-1);
+}
+
+/* Línea animada inferior */
+.lb-line {
+  position: absolute;
+  bottom: 0; left: 50%;
+  width: 0; height: 2px;
+  background: linear-gradient(90deg, var(--bolivar-1), var(--bolivar-2));
+  border-radius: 2px;
+  transform: translateX(-50%);
+  transition: width .3s;
+}
+.lb-input-wrap input:focus ~ .lb-line { width: 100%; }
+
+/* Toggle contraseña */
+.lb-pw-toggle {
+  position: absolute;
+  right: 12px; top: 50%;
+  transform: translateY(-50%);
+  background: none; border: none;
+  cursor: pointer;
+  color: var(--texto-muted);
+  padding: 4px; border-radius: 5px;
+  display: flex; align-items: center;
+  transition: color .2s, background .2s;
+}
+.lb-pw-toggle:hover {
+  color: var(--bolivar-1);
+  background: rgba(28,224,235,0.08);
+}
+
+/* Error */
+.lb-error {
+  color: #ff6b6b;
+  font-size: 11px;
+  margin-top: 5px;
+  padding: 3px 8px;
+  border-radius: var(--radio-sm);
+  background: rgba(255,107,107,0.08);
+  border: 1px solid rgba(255,107,107,0.18);
+  display: none;
+}
+.lb-error.show { display: block; animation: lbFadeIn .2s ease; }
+@keyframes lbFadeIn {
+  from { opacity:0; transform: translateY(-4px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+/* ── Opciones (recordar / olvidé) ── */
+.lb-opts {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.lb-remember { display: flex; align-items: center; gap: 7px; cursor: pointer; }
+.lb-remember input { display: none; }
+.lb-checkbox {
+  width: 15px; height: 15px;
+  border: 2px solid var(--borde);
+  border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s; flex-shrink: 0;
+}
+.lb-checkbox::after {
+  content: '';
+  width: 7px; height: 7px;
+  background: var(--bolivar-1);
+  border-radius: 2px;
+  transform: scale(0);
+  transition: transform .2s;
+}
+.lb-remember input:checked ~ .lb-checkbox-label .lb-checkbox {
+  border-color: var(--bolivar-1);
+  background: rgba(28,224,235,0.1);
+}
+.lb-remember input:checked ~ .lb-checkbox-label .lb-checkbox::after { transform: scale(1); }
+.lb-checkbox-label { display: flex; align-items: center; gap: 7px; color: var(--texto-muted); font-size: 12px; }
+
+.lb-forgot { color: var(--texto-muted); text-decoration: none; font-size: 12px; transition: color .2s; }
+.lb-forgot:hover { color: var(--bolivar-1); }
+
+/* ── Botón submit ── */
+.lb-submit {
+  width: 100%;
+  background: linear-gradient(135deg, var(--bolivar-1), var(--bolivar-3));
+  border: none; border-radius: var(--radio-sm);
+  padding: 12px;
+  color: #050e10;
+  font-size: 12px; font-weight: 700;
+  cursor: pointer;
+  position: relative; overflow: hidden;
+  transition: transform .2s, box-shadow .2s;
+  margin-bottom: 18px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.lb-submit:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(28,224,235,0.3); }
+.lb-submit:active { transform: translateY(0); }
+.lb-submit:disabled { opacity: .7; cursor: not-allowed; transform: none; }
+.lb-submit-glow {
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+  transition: left .5s;
+}
+.lb-submit:hover .lb-submit-glow { left: 100%; }
+
+/* ── Divisor ── */
+.lb-divider { text-align: center; position: relative; margin: 0 0 16px; }
+.lb-divider::before {
+  content: '';
+  position: absolute; top: 50%; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--borde), transparent);
+}
+.lb-divider span {
+  background: var(--bg-superficie);
+  color: var(--texto-muted);
+  font-size: 11px;
+  padding: 0 14px;
+  position: relative;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+}
+
+/* ── Botón social ── */
+.lb-social-btn {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-sm);
+  padding: 10px 16px;
+  color: var(--texto-secundario);
+  font-size: 12px; font-weight: 500;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+  margin-bottom: 16px;
+}
+.lb-social-btn:hover {
+  border-color: var(--bolivar-1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(28,224,235,0.1);
+}
+
+/* ── Signup ── */
+.lb-signup { text-align: center; color: var(--texto-muted); font-size: 12px; }
+.lb-signup a { color: var(--bolivar-1); text-decoration: none; font-weight: 500; transition: color .2s; }
+.lb-signup a:hover { color: var(--bolivar-5); }
+
+/* ── Responsivo ── */
+@media (max-width: 420px) {
+  .lb-card { padding: 22px 16px; }
+  .lb-logo { width: 50px; height: 50px; }
+}

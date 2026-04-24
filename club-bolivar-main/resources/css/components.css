@@ -1,0 +1,217 @@
+/* ═══════════════════════════════════════════════════════════════
+   CLUB BOLÍVAR — COMPONENTES GLOBALES
+   Botones, inputs, tabla, navbar, badges, cards, layout.
+   Requiere: colors.css
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Reset base ── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--bg-base);
+  color: var(--texto-primario);
+  transition: var(--transicion);
+  min-height: 100vh;
+}
+#app { min-height: 100vh; }
+
+/* ── Botón tema (todas las páginas) ── */
+.btn-tema {
+  background: rgba(28,224,235,0.08);
+  border: 1px solid rgba(28,224,235,0.2);
+  color: var(--bolivar-1);
+  border-radius: var(--radio-sm);
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: background .2s;
+  display: flex;
+  align-items: center;
+}
+.btn-tema:hover { background: rgba(28,224,235,0.16); }
+
+/* ── Navbar ── */
+.navbar {
+  background: var(--bg-nav);
+  padding: 0 1.5rem;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--sombra-nav);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid rgba(28,224,235,0.1);
+}
+.navbar-brand { display: flex; align-items: center; gap: 10px; }
+.navbar-logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(28,224,235,0.3));
+}
+.navbar-logo-fallback {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--bolivar-1), var(--bolivar-3));
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: 14px; color: #050e10;
+}
+.navbar-brand-texto { display: flex; flex-direction: column; }
+.navbar-brand-titulo {
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  line-height: 1.1;
+}
+.navbar-brand-sub {
+  color: var(--bolivar-1);
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.navbar-acciones { display: flex; align-items: center; gap: 10px; }
+.navbar-usuario { color: rgba(255,255,255,0.65); font-size: 0.82rem; }
+
+/* ── Botones generales ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 8px 18px;
+  border-radius: var(--radio-sm);
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: var(--transicion);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+.btn:disabled { opacity: .6; cursor: not-allowed; }
+
+.btn-primario {
+  background: linear-gradient(135deg, var(--bolivar-1), var(--bolivar-3));
+  color: #050e10;
+}
+.btn-primario:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(28,224,235,0.3);
+}
+
+.btn-peligro { background: #dc2626; color: #fff; }
+.btn-peligro:hover:not(:disabled) { background: #b91c1c; }
+
+.btn-outline {
+  background: transparent;
+  color: var(--bolivar-1);
+  border: 1px solid var(--bolivar-4);
+}
+.btn-outline:hover:not(:disabled) { border-color: var(--bolivar-1); }
+
+.btn-sm { padding: 5px 12px; font-size: 0.76rem; }
+.btn-full { width: 100%; }
+
+/* ── Cards ── */
+.card {
+  background: var(--bg-superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-card);
+  padding: 1.25rem;
+}
+.card-header {
+  margin-bottom: 1rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--borde);
+}
+.card-titulo { font-size: 0.95rem; font-weight: 700; color: var(--texto-primario); }
+.card-subtitulo { font-size: 0.78rem; color: var(--texto-muted); margin-top: 2px; }
+
+/* ── Tabla ── */
+.tabla-contenedor {
+  overflow-x: auto;
+  border-radius: var(--radio-md);
+  border: 1px solid var(--borde);
+}
+.tabla { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.tabla thead th {
+  background: var(--bg-superficie2);
+  color: var(--texto-muted);
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--borde);
+}
+.tabla tbody tr { border-bottom: 1px solid var(--borde); transition: background .15s; }
+.tabla tbody tr:last-child { border-bottom: none; }
+.tabla tbody tr:hover { background: var(--bg-superficie2); }
+.tabla tbody td { padding: 0.7rem 1rem; color: var(--texto-primario); }
+
+/* ── Badges ── */
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.badge-create { background: var(--badge-create-bg); color: var(--badge-create-txt); }
+.badge-update { background: var(--badge-update-bg); color: var(--badge-update-txt); }
+.badge-delete { background: var(--badge-delete-bg); color: var(--badge-delete-txt); }
+
+/* ── Stats cards ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+.stat-card {
+  background: var(--bg-superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--sombra-card);
+}
+.stat-icono {
+  width: 40px; height: 40px;
+  border-radius: var(--radio-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.stat-icono-cyan  { background: rgba(28,224,235,0.12); }
+.stat-icono-verde { background: rgba(16,185,129,0.12); }
+.stat-icono-rojo  { background: rgba(239,68,68,0.12); }
+.stat-icono-gold  { background: rgba(251,191,36,0.12); }
+.stat-valor { font-size: 1.4rem; font-weight: 800; color: var(--texto-primario); line-height: 1; }
+.stat-label { font-size: 0.75rem; color: var(--texto-muted); margin-top: 2px; }
+
+/* ── Layout ── */
+.pagina-contenido { padding: 1.5rem; max-width: 1400px; margin: 0 auto; }
+.pagina-encabezado { margin-bottom: 1.25rem; }
+.pagina-titulo { font-size: 1.2rem; font-weight: 700; color: var(--texto-primario); }
+.pagina-subtitulo { font-size: 0.82rem; color: var(--texto-muted); margin-top: 3px; }
+
+/* ── Responsivo ── */
+@media (max-width: 768px) {
+  .navbar { padding: 0 1rem; height: 54px; }
+  .navbar-brand-sub { display: none; }
+  .navbar-usuario { display: none; }
+  .pagina-contenido { padding: 1rem; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}

@@ -1,0 +1,44 @@
+{
+    "name": "club-bolivar",
+    "version": "1.0.0",
+    "description": "<p align=\"center\"><a href=\"https://laravel.com\" target=\"_blank\"><img src=\"https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg\" width=\"400\" alt=\"Laravel Logo\"></a></p>",
+    "main": "index.js",
+    "directories": {
+        "test": "tests"
+    },
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/FidelEliseoReyesRamirez/club-bolivar.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs",
+    "bugs": {
+        "url": "https://github.com/FidelEliseoReyesRamirez/club-bolivar/issues"
+    },
+    "homepage": "https://github.com/FidelEliseoReyesRamirez/club-bolivar#readme",
+    "devDependencies": {
+        "@headlessui/react": "^2.0.0",
+        "@inertiajs/react": "^2.0.0",
+        "@tailwindcss/forms": "^0.5.3",
+        "@vitejs/plugin-react": "^5.0.0",
+        "autoprefixer": "^10.4.12",
+        "laravel-vite-plugin": "^3.0.1",
+        "postcss": "^8.4.31",
+        "tailwindcss": "^3.2.1",
+        "vite": "^8.0.3"
+    },
+    "dependencies": {
+        "axios": "^1.14.0",
+        "react": "^19.2.4",
+        "react-dom": "^19.2.4",
+        "react-router-dom": "^7.14.0",
+        "react-webcam": "^7.2.0"
+    }
+}

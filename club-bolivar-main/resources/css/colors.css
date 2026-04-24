@@ -1,0 +1,73 @@
+/* ═══════════════════════════════════════════════════════════════
+   CLUB BOLÍVAR — PALETA DE COLORES
+   Solo variables. No clases, no estilos, no componentes.
+   Importar este archivo en todos los demás CSS.
+═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Paleta celeste Club Bolívar ── */
+  --bolivar-1:  #1CE0EB;
+  --bolivar-2:  #19C8D1;
+  --bolivar-3:  #15A3AB;
+  --bolivar-4:  #0D666B;
+  --bolivar-5:  #1EECF7;
+
+  /* ── Modo oscuro (default) ── */
+  --bg-base:         #060d1a;
+  --bg-superficie:   #0d1f24;
+  --bg-superficie2:  #0a1a1f;
+  --bg-input:        #081214;
+  --bg-nav:          #03080f;
+
+  --borde:           #1a3a3f;
+  --borde-hover:     #1CE0EB;
+  --borde-focus:     #1CE0EB;
+
+  --texto-primario:  #e0f7f8;
+  --texto-secundario:#8ab8bc;
+  --texto-muted:     #5a8a8e;
+  --texto-nav:       #ffffff;
+
+  --badge-create-bg:   #063a2a;
+  --badge-create-txt:  #6ee7b7;
+  --badge-update-bg:   #0d2a4a;
+  --badge-update-txt:  #93c5fd;
+  --badge-delete-bg:   #3a0d0d;
+  --badge-delete-txt:  #fca5a5;
+
+  --sombra-card: 0 4px 24px rgba(0,0,0,0.5);
+  --sombra-nav:  0 2px 12px rgba(0,0,0,0.4);
+
+  --radio-sm: 6px;
+  --radio-md: 10px;
+  --radio-lg: 16px;
+  --transicion: all 0.2s ease;
+}
+
+/* ── Modo claro ── */
+[data-theme="light"] {
+  --bg-base:         #e8f6f7;
+  --bg-superficie:   #ffffff;
+  --bg-superficie2:  #f0fafb;
+  --bg-input:        #ffffff;
+  --bg-nav:          #0d666b;
+
+  --borde:           #b0dde0;
+  --borde-hover:     #15A3AB;
+  --borde-focus:     #15A3AB;
+
+  --texto-primario:  #0a2a2e;
+  --texto-secundario:#2a6a6e;
+  --texto-muted:     #5a8a8e;
+  --texto-nav:       #ffffff;
+
+  --badge-create-bg:   #d1fae5;
+  --badge-create-txt:  #065f46;
+  --badge-update-bg:   #dbeafe;
+  --badge-update-txt:  #1e40af;
+  --badge-delete-bg:   #fee2e2;
+  --badge-delete-txt:  #991b1b;
+
+  --sombra-card: 0 4px 24px rgba(13,102,107,0.10);
+  --sombra-nav:  0 2px 12px rgba(13,102,107,0.15);
+}
