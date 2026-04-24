@@ -9,6 +9,8 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+
 
 class SocioController extends Controller
 {
@@ -45,56 +47,55 @@ class SocioController extends Controller
         $request->validate([
             'nombres' => 'required|string',
             'apellidos' => 'required|string',
-            'ci' => [
-                'required',
-                'digits:8',
-                'unique:socios,ci'
-            ],
+            'ci' => ['required','digits:8','unique:socios,ci'],
+            'telefono' => ['required','digits:8','regex:/^[67][0-9]{7}$/'],
 
-            'telefono' => [
-                'required',
-                'digits:8',
-                'regex:/^[67][0-9]{7}$/'
-            ],
+            // 🔥 CORREGIDO
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:6|confirmed',
 
-            'email' => 'nullable|email|unique:socios,email',
             'tipo_membresia' => 'required',
-            'foto' => 'required', 
+            'foto' => 'required|string',
         ]);
 
-        $fotoPath = null;
-        if ($request->foto) {
-            $fotoPath = $this->uploadBase64($request->foto);
+        $fotoPath = $this->uploadBase64($request->foto);
+
+        $roleId = $this->getRoleId('socio');
+        if (!$roleId) {
+            throw new \Exception("Rol 'socio' no existe");
         }
 
-        Socio::create([
-            'id' => (string) Str::uuid(),
-            'numero_socio' => 'SOC-' . strtoupper(Str::random(6)),
-            'nombres' => $request->nombres,
-            'apellidos' => $request->apellidos,
-            'ci' => $request->ci,
-            'fecha_nacimiento' => $request->fecha_nacimiento,
-            'telefono' => $request->telefono,
-            'direccion' => $request->direccion,
-            'tipo_membresia' => $request->tipo_membresia,
-            'estado' => 'Activo', 
-            'estado_aprobacion' => 'En espera',
-            'fecha_ingreso' => now(),
-            'foto_path' => $fotoPath,
-            'activo' => 1,
-            'deleted' => 0,
-            'email' => $request->email,
-            'user_id' => $user->id,
-        ]);
+        DB::transaction(function () use ($request, $fotoPath, $roleId) {
 
-        $user = User::create([
-            'id' => (string) Str::uuid(),
-            'name' => $request->nombres . ' ' . $request->apellidos,
-            'email' => $request->email,
-            'password' => Hash::make($request->ci), // o password temporal
-            'role_id' => $this->getRoleId('socio'),
-            'activo' => true,
-        ]);
+            $user = User::create([
+                'id' => (string) Str::uuid(),
+                'name' => $request->nombres . ' ' . $request->apellidos,
+                'email' => $request->email,
+                'password' => Hash::make($request->password), // 🔥 ahora correcto
+                'role_id' => $roleId,
+                'activo' => true,
+            ]);
+
+            Socio::create([
+                'id' => (string) Str::uuid(),
+                'numero_socio' => 'SOC-' . strtoupper(Str::random(6)),
+                'nombres' => $request->nombres,
+                'apellidos' => $request->apellidos,
+                'ci' => $request->ci,
+                'fecha_nacimiento' => $request->fecha_nacimiento,
+                'telefono' => $request->telefono,
+                'direccion' => $request->direccion,
+                'tipo_membresia' => $request->tipo_membresia,
+                'estado' => 'Activo',
+                'estado_aprobacion' => 'En espera',
+                'fecha_ingreso' => now(),
+                'foto_path' => $fotoPath,
+                'activo' => 1,
+                'deleted' => 0,
+                'email' => $request->email,
+                'user_id' => $user->id,
+            ]);
+        });
 
         return redirect()->route('socios.index');
     }

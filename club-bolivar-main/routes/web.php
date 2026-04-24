@@ -6,6 +6,8 @@ use App\Http\Controllers\SocioController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Models\Socio;
+use Illuminate\Support\Facades\Auth;
 
 /*
 |--------------------------------------------------------------------------
@@ -69,6 +71,19 @@ Route::middleware(['auth'])->group(function () {
     ->name('socios.destroy');
     Route::patch('/socios/{socio}/restore', [SocioController::class, 'restore'])
     ->name('socios.restore');
+    
+    Route::get('/socio/panel', function () {
+
+        $user = Auth::user();
+
+        $socio = Socio::where('user_id', $user->id)->first();
+
+        return Inertia::render('Accesos/Socios/Panel', [
+            'user' => $user,
+            'socio' => $socio
+        ]);
+
+    })->middleware(['auth'])->name('socio.panel');    
 });
 
 require __DIR__.'/auth.php';

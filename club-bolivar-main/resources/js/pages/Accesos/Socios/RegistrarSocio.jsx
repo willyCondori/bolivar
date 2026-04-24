@@ -12,11 +12,12 @@ export default function RegistrarSocio() {
         apellidos: '',
         ci: '',
         email: '',
+        password: '',
+        password_confirmation: '',
         fecha_nacimiento: '',
         telefono: '',
         direccion: '',
-        // Corregido: 'Bronce' es el valor inicial permitido por tu SQL
-        tipo_membresia: 'Bronce', 
+        tipo_membresia: 'Bronce',
         foto: null,
     });
 
@@ -76,6 +77,26 @@ export default function RegistrarSocio() {
                                     <input type="email" value={data.email} className="input-style" onChange={e => setData('email', e.target.value)} />
                                     {errors.email && <span className="text-red-500 text-xs">{errors.email}</span>}
                                 </div>
+                                <div className="form-group">
+                                    <label className="label-style">Contraseña</label>
+                                    <input
+                                        type="password"
+                                        value={data.password}
+                                        className="input-style"
+                                        onChange={e => setData('password', e.target.value)}
+                                    />
+                                    {errors.password && <span className="text-red-500 text-xs">{errors.password}</span>}
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="label-style">Confirmar Contraseña</label>
+                                    <input
+                                        type="password"
+                                        value={data.password_confirmation}
+                                        className="input-style"
+                                        onChange={e => setData('password_confirmation', e.target.value)}
+                                    />
+                                </div>                                
                                 <div className="form-group">
                                     <label className="label-style">Teléfono</label>
                                     <input
