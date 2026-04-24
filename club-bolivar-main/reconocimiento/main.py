@@ -3,13 +3,7 @@ from deepface import DeepFace
 import tempfile
 import os
 from typing import List
-
-app = FastAPI()
-from fastapi import FastAPI, UploadFile, File
-from deepface import DeepFace
-import tempfile
-import os
-from typing import List
+import traceback
 
 app = FastAPI()
 
@@ -41,8 +35,8 @@ async def reconocer(
                 result = DeepFace.verify(
                     img1_path=path_camera,
                     img2_path=path_db,
-                    enforce_detection=True,
-                    model_name="VGG-Face"
+                    enforce_detection=False,
+                    model_name="Facenet"
                 )
 
                 if result["verified"]:
@@ -53,7 +47,8 @@ async def reconocer(
                     }
 
             except Exception as e:
-                print(f"Error procesando socio {socio_file.filename}: {e}")
+                print(f"Error procesando socio {socio_file.filename}:")
+                traceback.print_exc()
                 continue
             finally:
                 # Limpiar archivo temporal del socio actual

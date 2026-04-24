@@ -33,6 +33,13 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        $user = Auth::user();
+
+        // Redirección según rol
+        if ($user->role && $user->role->nombre === 'socio') {
+            return redirect()->route('socio.panel');
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
