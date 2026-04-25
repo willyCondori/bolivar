@@ -166,7 +166,15 @@ export default function SociosIndex({ socios }) {
                                     <td className="text-main">{s.telefono}</td>
 
                                     <td>
-                                        <div className="text-main text-[#1CE0EB]">{s.tipo_membresia}</div>
+                                        {s.membresia_activa ? (
+                                            <div className="text-main text-[#1CE0EB] font-bold">
+                                                {s.membresia_activa.tipo}
+                                            </div>
+                                        ) : (
+                                            <span className="text-xs text-gray-400">
+                                                Sin membresía
+                                            </span>
+                                        )}
                                     </td>
 
                                     <td>

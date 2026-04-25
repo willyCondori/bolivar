@@ -7,6 +7,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use App\Http\Controllers\MembresiaController;
 use App\Models\Socio;
 
 /*
@@ -141,6 +142,8 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/profile', 'destroy')->name('profile.destroy');
     });
 
+    Route::get('/accesos/membresias', [MembresiaController::class, 'index'])
+    ->name('accesos.membresias');
 });
 
 require __DIR__.'/auth.php';

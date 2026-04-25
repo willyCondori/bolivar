@@ -74,7 +74,9 @@ class Socio extends Model
     /** La membresía activa y vigente más reciente */
     public function membresiaActiva()
     {
-        return $this->hasOne(Membresia::class, 'socio_id')
-            ->latest('fecha_inicio');
+        return $this->hasOne(Membresia::class)
+        ->where('estado', 'activo')
+        ->where('deleted', false)
+        ->latest('fecha_inicio');
     }
 }

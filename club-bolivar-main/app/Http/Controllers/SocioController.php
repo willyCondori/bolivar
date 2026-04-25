@@ -19,7 +19,7 @@ class SocioController extends Controller
     {
         $estado = $request->get('estado', 'activo');
 
-        $query = Socio::query()->with(['membresiaActiva']);
+        $query = Socio::with('membresiaActiva');
 
         if ($estado === 'activo') {
             $query->where('estado', 'Activo')->where('deleted', 0);
@@ -175,7 +175,7 @@ class SocioController extends Controller
 
             $socio->membresias()
                 ->where('estado', 'activo')
-                ->update(['estado' => 'cancelado']);
+                ->update(['estado' => 'inactivo']);
         });
 
         return redirect()->route('socios.index');
