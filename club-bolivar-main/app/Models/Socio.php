@@ -22,6 +22,8 @@ class Socio extends Model
         'email',
         'telefono',
         'direccion',
+        // tipo_membresia se mantiene por datos existentes,
+        // pero el tipo real de membresía vive en la tabla membresias.
         'tipo_membresia',
         'estado',
         'estado_aprobacion',
@@ -32,19 +34,20 @@ class Socio extends Model
         'observaciones',
         'activo',
         'deleted',
+        'qr_token',
     ];
 
     protected $casts = [
-        'fecha_nacimiento' => 'date',
-        'fecha_ingreso' => 'date',
+        'fecha_nacimiento'            => 'date',
+        'fecha_ingreso'               => 'date',
         'fecha_vencimiento_membresia' => 'date',
-        'activo' => 'boolean',
-        'deleted' => 'boolean',
+        'activo'                      => 'boolean',
+        'deleted'                     => 'boolean',
     ];
 
     protected $keyType = 'string';
     public $incrementing = false;
-    public $timestamps = false;
+    public $timestamps   = false;
 
     protected static function booted(): void
     {
@@ -55,8 +58,23 @@ class Socio extends Model
         });
     }
 
+    /* ── Relaciones ─────────────────────────────────────────────────── */
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /** Todas las membresías históricas del socio */
+    public function membresias()
+    {
+        return $this->hasMany(Membresia::class, 'socio_id');
+    }
+
+    /** La membresía activa y vigente más reciente */
+    public function membresiaActiva()
+    {
+        return $this->hasOne(Membresia::class, 'socio_id')
+            ->latest('fecha_inicio');
     }
 }

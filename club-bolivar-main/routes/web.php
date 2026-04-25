@@ -2,8 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReconocimientoController;
-use App\Http\Controllers\SocioController; 
-use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\SocioController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -31,7 +30,9 @@ Route::get('/', function () {
 Route::middleware(['auth'])->group(function () {
 
     // Dashboard
-    Route::get('/dashboard', fn() => Inertia::render('Dashboard'))->name('dashboard');
+    Route::get('/dashboard', fn() =>
+        Inertia::render('Dashboard')
+    )->name('dashboard');
 
 
     // ===============================
@@ -39,22 +40,42 @@ Route::middleware(['auth'])->group(function () {
     // ===============================
     Route::prefix('accesos')->group(function () {
 
-        // Ruta legacy — redirige al nuevo módulo facial
+        /*
+        |--------------------------------------------------
+        | 🔵 PUNTO DE ENTRADA PRINCIPAL
+        |--------------------------------------------------
+        | Aquí cargas la vista principal de accesos
+        */
         Route::get('/reconocimiento', fn() =>
-            redirect()->route('accesos.facial')
+            Inertia::render('Accesos/Reconocimiento')
         )->name('reconocimiento.index');
 
-        // ── Reconocimiento Facial ──────────────────────────────────────────
+
+        /*
+        |--------------------------------------------------
+        | 🟢 MÓDULO RECONOCIMIENTO FACIAL
+        |--------------------------------------------------
+        */
         Route::get('/ingresos/facial', fn() =>
-            Inertia::render('Accesos/ingresos/ReconocimientoFacial')
+            Inertia::render('Accesos/Ingresos/ReconocimientoFacial')
         )->name('accesos.facial');
 
-        // ── Escaneo QR ────────────────────────────────────────────────────
+
+        /*
+        |--------------------------------------------------
+        | 🟢 MÓDULO QR
+        |--------------------------------------------------
+        */
         Route::get('/ingresos/qr', fn() =>
-            Inertia::render('Accesos/ingresos/EscaneoQR')
+            Inertia::render('Accesos/Ingresos/EscaneoQR')
         )->name('accesos.qr');
 
-        // ── API de reconocimiento facial (POST) ───────────────────────────
+
+        /*
+        |--------------------------------------------------
+        | 🔴 API RECONOCIMIENTO
+        |--------------------------------------------------
+        */
         Route::post('/reconocer', [ReconocimientoController::class, 'verificar'])
             ->name('accesos.reconocer');
     });
@@ -72,11 +93,20 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/guardar', [SocioController::class, 'store'])
             ->name('socios.store');
 
-        Route::get('/', [SocioController::class, 'index'])->name('socios.index');
-        Route::delete('/{socio}', [SocioController::class, 'destroy'])->name('socios.destroy');
-        Route::patch('/{socio}/restore', [SocioController::class, 'restore'])->name('socios.restore');
-    });
+        Route::get('/', [SocioController::class, 'index'])
+            ->name('socios.index');
 
+        Route::delete('/{socio}', [SocioController::class, 'destroy'])
+            ->name('socios.destroy');
+
+        Route::patch('/{socio}/restore', [SocioController::class, 'restore'])
+            ->name('socios.restore');
+    });
+    Route::get('/{socio}/editar', [SocioController::class, 'edit'])
+        ->name('socios.edit');
+
+    Route::patch('/{socio}', [SocioController::class, 'update'])
+        ->name('socios.update');
 
     // ===============================
     // 🔹 PANEL SOCIO
@@ -84,7 +114,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/socio/panel', function () {
 
         $user = Auth::user();
-
         $socio = Socio::where('user_id', $user->id)->first();
 
         return Inertia::render('Accesos/Socios/Panel', [
@@ -96,7 +125,7 @@ Route::middleware(['auth'])->group(function () {
 
 
     // ===============================
-    // 🔹 REPORTES (VISTA)
+    // 🔹 REPORTES
     // ===============================
     Route::get('/reportes/ingresos', fn() =>
         Inertia::render('Accesos/Reportes/ReporteIngresos')

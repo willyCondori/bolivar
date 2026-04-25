@@ -46,8 +46,20 @@ export default function ReconocimientoFacial() {
 
             streamRef.current = stream;
             if (videoRef.current) {
-                videoRef.current.srcObject = stream;
-                await videoRef.current.play();
+                const video = videoRef.current;
+
+                video.srcObject = stream;
+                video.muted = true;
+                video.playsInline = true;
+                video.autoplay = true;
+
+                video.onloadedmetadata = async () => {
+                    try {
+                        await video.play();
+                    } catch (err) {
+                        console.error("Error al reproducir video:", err);
+                    }
+                };
             }
             setStatus('running');
         } catch (e) {
@@ -339,10 +351,10 @@ export default function ReconocimientoFacial() {
                     <div className="rf-videoWrap">
                         <video
                             ref={videoRef}
-                            className="rf-video"
-                            style={{ display: status === 'running' ? 'block' : 'none' }}
-                            playsInline
-                            muted
+                                    className="rf-video"
+                                    playsInline
+                                    muted
+                                    autoPlay
                         />
                         {status !== 'running' && (
                             <div className="rf-placeholder">Vista previa de cámara</div>
