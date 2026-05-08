@@ -68,6 +68,7 @@ class BloqueoSocioController extends Controller
         $socio->membresias()
             ->update([
                 'deleted' => false,
+                'estado' => 'activo',
             ]);
 
         return redirect()
