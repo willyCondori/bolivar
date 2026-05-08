@@ -1,0 +1,18 @@
+.icon-tema {
+  width: 18px;
+  height: 18px;
+
+  display: block;
+
+  background: linear-gradient(
+    135deg,
+    #1CE0EB,
+    #15A3AB
+  );
+
+  mask: url('https://api.iconify.design/solar/moon-bold.svg')
+    no-repeat center / contain;
+
+  -webkit-mask: url('https://api.iconify.design/solar/moon-bold.svg')
+    no-repeat center / contain;
+}

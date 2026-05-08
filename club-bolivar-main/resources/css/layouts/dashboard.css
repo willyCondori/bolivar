@@ -1,0 +1,24 @@
+.dashboard-root {
+  min-height: 100vh;
+
+  background: var(--bg-base);
+}
+
+.dashboard-main {
+  padding: 1.5rem;
+
+  max-width: 1400px;
+
+  margin: 0 auto;
+}
+
+.stats-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(auto-fit, minmax(180px, 1fr));
+
+  gap: .85rem;
+
+  margin-bottom: 1.25rem;
+}

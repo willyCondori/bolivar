@@ -68,6 +68,7 @@ export default function RegistrarSocio() {
             return;
         }
 
+
         // 2. Validar edad (18 - 90 años)
         if (data.fecha_nacimiento) {
             const fechaNac = new Date(data.fecha_nacimiento);

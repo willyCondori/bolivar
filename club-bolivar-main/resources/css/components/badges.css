@@ -1,0 +1,28 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+
+  padding: 3px 10px;
+
+  border-radius: 999px;
+
+  font-size: .68rem;
+  font-weight: 700;
+
+  text-transform: uppercase;
+}
+
+.badge-create {
+  background: var(--badge-create-bg);
+  color: var(--badge-create-txt);
+}
+
+.badge-update {
+  background: var(--badge-update-bg);
+  color: var(--badge-update-txt);
+}
+
+.badge-delete {
+  background: var(--badge-delete-bg);
+  color: var(--badge-delete-txt);
+}

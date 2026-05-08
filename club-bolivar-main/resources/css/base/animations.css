@@ -1,0 +1,31 @@
+@keyframes orbFloat {
+  0%,100% {
+    transform: translate(0,0);
+  }
+
+  33% {
+    transform: translate(10px,-14px);
+  }
+
+  66% {
+    transform: translate(-6px,8px);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%,100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: .4;
+    transform: scale(.7);
+  }
+}

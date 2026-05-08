@@ -1,4 +1,25 @@
-@import './bolivar.css';
+@import './base/variables.css';
+@import './base/reset.css';
+@import './base/animations.css';
+
+@import './components/buttons.css';
+@import './components/cards.css';
+@import './components/navbar.css';
+@import './components/tables.css';
+@import './components/badges.css';
+@import './components/forms.css';
+@import './components/theme.css';
+
+@import './components/access.css';
+@import './components/access-result.css';
+@import './components/access-type.css';
+
+@import './layouts/dashboard.css';
+
+@import './pages/login.css';
+@import './pages/accesos.css';
+@import './pages/qr.css';
+@import './pages/facial.css';
 
 @tailwind base;
 @tailwind components;

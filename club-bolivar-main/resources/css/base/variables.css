@@ -1,0 +1,54 @@
+:root {
+  --bolivar-1: #1CE0EB;
+  --bolivar-2: #19C8D1;
+  --bolivar-3: #15A3AB;
+  --bolivar-4: #0D666B;
+  --bolivar-5: #1EECF7;
+
+  --bg-base: #060d1a;
+  --bg-superficie: #0d1f24;
+  --bg-superficie2: #0a1a1f;
+  --bg-input: #081214;
+  --bg-nav: #03080f;
+
+  --borde: #1a3a3f;
+  --borde-focus: #1CE0EB;
+
+  --texto-primario: #e0f7f8;
+  --texto-secundario: #8ab8bc;
+  --texto-muted: #5a8a8e;
+
+  --badge-create-bg: #063a2a;
+  --badge-create-txt: #6ee7b7;
+
+  --badge-update-bg: #0d2a4a;
+  --badge-update-txt: #93c5fd;
+
+  --badge-delete-bg: #3a0d0d;
+  --badge-delete-txt: #fca5a5;
+
+  --sombra-card: 0 4px 24px rgba(0,0,0,.5);
+
+  --radio-sm: 6px;
+  --radio-md: 10px;
+  --radio-lg: 16px;
+
+  --transicion: all .2s ease;
+}
+
+[data-theme="light"] {
+  --bg-base: #e8f6f7;
+  --bg-superficie: #ffffff;
+  --bg-superficie2: #f0fafb;
+  --bg-input: #ffffff;
+  --bg-nav: #0d666b;
+
+  --borde: #b0dde0;
+  --borde-focus: #15A3AB;
+
+  --texto-primario: #0a2a2e;
+  --texto-secundario: #2a6a6e;
+  --texto-muted: #5a8a8e;
+
+  --sombra-card: 0 4px 24px rgba(13,102,107,.1);
+}

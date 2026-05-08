@@ -1,0 +1,150 @@
+.access-grid {
+    display: grid;
+    grid-template-columns: 1.1fr .9fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.access-card {
+    border: 1px solid rgba(255,255,255,.07);
+    background: linear-gradient(
+        180deg,
+        rgba(10,20,35,.82),
+        rgba(5,11,22,.92)
+    );
+    backdrop-filter: blur(18px);
+    border-radius: 28px;
+    box-shadow:
+        0 20px 60px rgba(0,0,0,.25),
+        inset 0 1px 0 rgba(255,255,255,.04);
+
+    padding: 1.6rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.access-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        135deg,
+        rgba(28,224,235,.05),
+        transparent 45%
+    );
+    pointer-events: none;
+}
+
+.access-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+.access-topRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.access-user {
+    color: rgba(224,247,248,.45);
+    font-size: .84rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.access-back {
+    color: rgba(224,247,248,.70);
+    text-decoration: none;
+    font-weight: 750;
+}
+
+.access-back:hover {
+    color: #fff;
+}
+
+.access-title {
+    margin: 0;
+    font-size: clamp(1.6rem, 3.2vw, 2.3rem);
+    font-weight: 850;
+    line-height: 1.1;
+    color: #fff;
+}
+
+.access-title span {
+    display: block;
+    background: linear-gradient(
+        135deg,
+        #1CE0EB,
+        #9bf8ff,
+        #15A3AB
+    );
+
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.access-text {
+    margin-top: 1rem;
+    color: rgba(224,247,248,.58);
+    line-height: 1.8;
+    font-size: .96rem;
+}
+
+.access-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    margin-top: 1.2rem;
+}
+
+.access-alert {
+    margin-top: 1rem;
+    padding: .9rem 1rem;
+    border-radius: 18px;
+    border: 1px solid rgba(251,113,133,.22);
+    background: rgba(251,113,133,.10);
+    color: rgba(255,255,255,.86);
+    line-height: 1.6;
+    font-size: .92rem;
+}
+
+.access-alert-warning {
+    border: 1px solid rgba(251,191,36,.3);
+    background: rgba(251,191,36,.10);
+}
+
+.access-noteTitle {
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 750;
+    margin: 0 0 .5rem;
+}
+
+.access-noteText {
+    margin: 0;
+    color: rgba(224,247,248,.52);
+    line-height: 1.7;
+    font-size: .9rem;
+}
+
+.access-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,.25);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    display: inline-block;
+    margin-right: .5rem;
+    vertical-align: middle;
+}
+
+@media (max-width: 1024px) {
+    .access-grid {
+        grid-template-columns: 1fr;
+    }
+}

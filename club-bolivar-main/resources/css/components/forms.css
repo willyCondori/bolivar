@@ -1,0 +1,21 @@
+.input {
+  width: 100%;
+
+  background: var(--bg-input);
+
+  border: 1px solid var(--borde);
+
+  border-radius: var(--radio-sm);
+
+  padding: 12px 14px;
+
+  color: var(--texto-primario);
+
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--borde-focus);
+
+  box-shadow: 0 0 0 3px rgba(28,224,235,.08);
+}
