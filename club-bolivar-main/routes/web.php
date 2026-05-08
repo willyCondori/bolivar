@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use App\Http\Controllers\MembresiaController;
 use App\Models\Socio;
+use App\Http\Controllers\BloqueoSocioController;
 
 /*
 |--------------------------------------------------------------------------
@@ -142,6 +143,13 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/profile', 'destroy')->name('profile.destroy');
     });
 
+    // Bloqueo de socios
+    Route::get('/socios/{socio}/bloquear',  [BloqueoSocioController::class, 'show'])   ->name('socios.bloquear.show');
+    Route::post('/socios/{socio}/bloquear', [BloqueoSocioController::class, 'execute'])->name('socios.bloquear');
+    Route::patch(
+        '/socios/{socio}/desbloquear',
+        [BloqueoSocioController::class, 'desbloquear']
+    )->name('socios.desbloquear');
     Route::get('/accesos/membresias', [MembresiaController::class, 'index'])
     ->name('accesos.membresias');
 });

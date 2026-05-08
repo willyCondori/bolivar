@@ -9,7 +9,7 @@ const ROLES = {
         stats: [
             { num:'Socios',   label:'Gestión completa',      cta:'Registrar nuevo socio →', href:'socios.create' },
             { num:'Accesos',  label:'Control y seguimiento',  cta:'Reconocimiento facial →', href:'reconocimiento.index' },
-            { num:'Reportes', label:'Ingresos del sistema',   cta:'Ver reporte de ingresos →', href:'reportes.ingresos' },
+            { num:'Reportes', label:'Ingresos del accesos',   cta:'Ver reporte de accesos →', href:'reportes.ingresos' },
         ],
         actions: [
             { title:'Lo que hará este rol',  text:'Ver todos los módulos, aprobar procesos, supervisar operaciones y administrar la configuración general.' },

@@ -17,22 +17,27 @@ class SocioController extends Controller
 {
     public function index(Request $request)
     {
-        $estado = $request->get('estado', 'activo');
+        $estado = $request->get('estado', 'Activo');
 
         $query = Socio::with('membresiaActiva');
 
-        if ($estado === 'activo') {
-            $query->where('estado', 'Activo')->where('deleted', 0);
+        if ($estado === 'Activo') {
+            $query->where('estado', 'Activo')
+                ->where('deleted', 0);
         }
 
-        if ($estado === 'inactivo') {
+        if ($estado === 'Inactivo') {
             $query->where('estado', 'Inactivo');
         }
 
-        if ($estado === 'todos') {
-            $query->where('deleted', 0);
+        if ($estado === 'Bloqueado') {
+            $query->where('estado', 'Bloqueado');
         }
 
+        if ($estado === 'Todos') {
+            $query->where('deleted', 0);
+        }
+        
         return Inertia::render('Accesos/Socios/VerSocios', [
             'socios' => $query->get(),
             'filtroEstado' => $estado,
