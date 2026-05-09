@@ -1,18 +1,28 @@
-import AppSidebarLayout from '@/Layouts/AppSidebarLayout';
 import { Head } from '@inertiajs/react';
 import { QRCodeCanvas } from 'qrcode.react';
+import { router } from '@inertiajs/react';
 
 export default function Panel({ user, socio, membresia }) {
     return (
-        <AppSidebarLayout title="Carnet del Socio">
+        <>
             <Head title="Carnet Socio" />
 
-            <div className="flex justify-center items-center min-h-screen p-6 bg-slate-950">
+            {/* Botón cerrar sesión */}
+            <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 50 }}>
+                <button
+                    onClick={() => router.post(route('logout'))}
+                    style={{ background: 'linear-gradient(135deg,#1CE0EB,#15A3AB)', color: '#031019', padding: '8px 20px', borderRadius: '10px', fontWeight: '800', border: 'none', cursor: 'pointer' }}
+                >
+                    Cerrar sesión
+                </button>
+            </div>
 
-                {/* 🪪 CARNET */}
+            <div style={{ minHeight: '100vh', background: '#020617', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '24px' }}>
+
+                {/* CARNET */}
                 <div className="w-full max-w-[1000px] rounded-3xl overflow-hidden shadow-2xl border border-white/10 bg-gradient-to-br from-[#0f172a] to-[#020617] text-white relative">
 
-                    {/* 🔵 Header */}
+                    {/* Header */}
                     <div className="bg-gradient-to-r from-blue-700 to-cyan-500 px-8 py-5 flex items-center justify-between">
                         <div>
                             <h1 className="text-2xl font-black tracking-wider text-white">CLUB BOLÍVAR</h1>
@@ -23,23 +33,16 @@ export default function Panel({ user, socio, membresia }) {
                             <p className="text-xl font-mono font-bold tracking-tighter text-white">{socio?.numero_socio}</p>
                         </div>
                     </div>
-                    <div style={{
-                        position: 'absolute',
-                        bottom: '20px',
-                        right: '20px',
-                        background: 'white',
-                        padding: '10px',
-                        borderRadius: '12px'
-                    }}>
-                    <QRCodeCanvas
-                        value={socio?.qr_token || ''}
-                        size={120}
-                    />
+
+                    {/* QR */}
+                    <div style={{ position: 'absolute', bottom: '20px', right: '20px', background: 'white', padding: '10px', borderRadius: '12px' }}>
+                        <QRCodeCanvas value={socio?.qr_token || ''} size={120} />
                     </div>
-                    {/* 📋 Contenido Principal */}
+
+                    {/* Contenido */}
                     <div style={{ display: 'flex', flexDirection: 'row', minHeight: '420px' }}>
 
-                        {/* 📸 Columna Izquierda: Foto (40%) */}
+                        {/* Foto */}
                         <div style={{ width: '40%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px', borderRight: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.03)' }}>
                             <div style={{ position: 'relative' }}>
                                 <img
@@ -49,7 +52,6 @@ export default function Panel({ user, socio, membresia }) {
                                 />
                                 <div style={{ position: 'absolute', bottom: '-8px', right: '-8px', width: '24px', height: '24px', backgroundColor: '#22c55e', borderRadius: '50%', border: '3px solid #020617' }}></div>
                             </div>
-
                             <div style={{ textAlign: 'center', marginTop: '28px' }}>
                                 <h2 style={{ fontSize: '26px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '-0.5px', lineHeight: '1.1', marginBottom: '8px' }}>
                                     {socio?.nombres} <br />
@@ -61,46 +63,25 @@ export default function Panel({ user, socio, membresia }) {
                             </div>
                         </div>
 
-                        {/* 📋 Columna Derecha: Info (60%) */}
+                        {/* Info */}
                         <div style={{ width: '60%', padding: '48px', display: 'flex', alignItems: 'center' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '36px 48px', width: '100%' }}>
 
                                 <div>
                                     <p style={{ fontSize: '10px', color: '#3b82f6', textTransform: 'uppercase', fontWeight: '900', letterSpacing: '2px', marginBottom: '6px' }}>Documento (CI)</p>
-                                    <p style={{ fontSize: '22px', fontWeight: '700', letterSpacing: '-0.5px' }}>{socio?.ci || '---'}</p>
+                                    <p style={{ fontSize: '22px', fontWeight: '700', color: 'white' }}>{socio?.ci || '---'}</p>
                                 </div>
 
                                 <div>
                                     <p style={{ fontSize: '10px', color: '#3b82f6', textTransform: 'uppercase', fontWeight: '900', letterSpacing: '2px', marginBottom: '6px' }}>Membresía</p>
-                                <p
-                                    style={{
-                                        fontSize: '22px',
-                                        fontWeight: '700',
-                                        color:
-                                            membresia?.tipo === 'Celeste'
-                                                ? '#38BDF8'
-                                                : membresia?.tipo === 'Dorado'
-                                                ? '#FACC15'
-                                                : membresia?.tipo === 'Platino'
-                                                ? '#E5E7EB'
-                                                : '#CD7F32',
-                                        textShadow:
-                                            membresia?.tipo === 'Celeste'
-                                                ? '0 0 12px rgba(56,189,248,0.6)'
-                                                : membresia?.tipo === 'Dorado'
-                                                ? '0 0 12px rgba(250,204,21,0.6)'
-                                                : membresia?.tipo === 'Platino'
-                                                ? '0 0 12px rgba(229,231,235,0.6)'
-                                                : 'none',
-                                    }}
-                                >
-                                    {membresia?.tipo || 'Bronce'}
-                                </p>
+                                    <p style={{ fontSize: '22px', fontWeight: '700', color: membresia?.tipo === 'Celeste' ? '#38BDF8' : membresia?.tipo === 'Dorado' ? '#FACC15' : membresia?.tipo === 'Platino' ? '#E5E7EB' : '#CD7F32' }}>
+                                        {membresia?.tipo || 'Sin membresía'}
+                                    </p>
                                 </div>
 
                                 <div>
                                     <p style={{ fontSize: '10px', color: '#3b82f6', textTransform: 'uppercase', fontWeight: '900', letterSpacing: '2px', marginBottom: '6px' }}>Teléfono</p>
-                                    <p style={{ fontSize: '22px', fontWeight: '700' }}>{socio?.telefono || '---'}</p>
+                                    <p style={{ fontSize: '22px', fontWeight: '700', color: 'white' }}>{socio?.telefono || '---'}</p>
                                 </div>
 
                                 <div>
@@ -112,18 +93,16 @@ export default function Panel({ user, socio, membresia }) {
 
                                 <div>
                                     <p style={{ fontSize: '10px', color: '#3b82f6', textTransform: 'uppercase', fontWeight: '900', letterSpacing: '2px', marginBottom: '6px' }}>Fecha Ingreso</p>
-                                    <p style={{ fontSize: '22px', fontWeight: '700' }}>
-                                        {socio?.fecha_ingreso ? new Date(socio.fecha_ingreso).toLocaleDateString() : '23/4/2026'}
+                                    <p style={{ fontSize: '22px', fontWeight: '700', color: 'white' }}>
+                                        {socio?.fecha_ingreso ? new Date(socio.fecha_ingreso).toLocaleDateString() : '---'}
                                     </p>
                                 </div>
 
                             </div>
                         </div>
                     </div>
-
-                   
                 </div>
             </div>
-        </AppSidebarLayout>
+        </>
     );
 }

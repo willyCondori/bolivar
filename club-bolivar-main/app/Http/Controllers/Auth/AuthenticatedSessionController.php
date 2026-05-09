@@ -31,9 +31,34 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
-        $request->session()->regenerate();
-
         $user = Auth::user();
+
+        // ✅ Verificar si el socio está inactivo
+        if ($user->role && $user->role->nombre === 'socio') {
+            $socio = \App\Models\Socio::where('user_id', $user->id)->first();
+
+            if ($socio && $socio->estado === 'Inactivo') {
+                Auth::guard('web')->logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()->withErrors([
+                    'email' => 'Tu cuenta está inactiva. Contacta con el administrador.',
+                ]);
+            }
+
+            if ($socio && $socio->estado === 'Bloqueado') {
+                Auth::guard('web')->logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()->withErrors([
+                    'email' => 'Tu cuenta está bloqueada. Contacta con el administrador.',
+                ]);
+            }
+        }
+
+        $request->session()->regenerate();
 
         // Redirección según rol
         if ($user->role && $user->role->nombre === 'socio') {

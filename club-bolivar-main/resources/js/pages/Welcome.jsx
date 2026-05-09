@@ -109,7 +109,7 @@ export default function Welcome({ auth }) {
                         <span className="wl-nav-nombre">Club Bolívar</span>
                     </div>
                     <div>
-                        {auth.user
+                        {auth?.user
                             ? <Link href={route('dashboard')} className="wl-btn-solid">Dashboard</Link>
                             : <Link href={route('login')} className="wl-btn-outline">Ingresar</Link>
                         }
@@ -132,7 +132,7 @@ export default function Welcome({ auth }) {
                     </p>
 
                     <div className={v('wl-ctas')}>
-                        {auth.user
+                        {auth?.user
                             ? <Link href={route('dashboard')} className="wl-cta-primary">Ir al panel</Link>
                             : <Link href={route('login')} className="wl-cta-primary">Ya soy socio</Link>
                         }

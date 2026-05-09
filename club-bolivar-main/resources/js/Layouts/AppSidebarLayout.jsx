@@ -154,14 +154,14 @@ const active = (name) => { try { return route().current(name); } catch { return 
 const r      = (name) => { try { return route(name); } catch { return '#'; } };
 
 const NAV = {
-  Administrador: () => [
+  admin: () => [
     { label: 'Dashboard',         href: r('dashboard'),           active: active('dashboard'),            icon: I.dashboard  },
     { label: 'Registrar Ingresos',href: r('reconocimiento.index'),active: active('reconocimiento.index'), icon: I.registro   },
     { label: 'Socios',            href: r('socios.index'),         active: active('socios.index'),         icon: I.socios     },
     { label: 'Membresías',        href: r('accesos.membresias'),   active: active('accesos.membresias'),   icon: I.membresias },
     { label: 'Reportes',          href: r('reportes.ingresos'),    active: active('reporte.ingresos'),     icon: I.reportes   },
   ],
-  Operador: () => [
+  operador: () => [
     { label: 'Dashboard',         href: r('dashboard'),            active: active('dashboard'),            icon: I.dashboard },
     { label: 'Validar ingreso',   href: '#',                       active: false,                          icon: I.validar   },
     { label: 'Accesos del día',   href: '#',                       active: false,                          icon: I.plus      },
@@ -169,7 +169,7 @@ const NAV = {
     { label: 'Consulta de socio', href: '#',                       active: false,                          icon: I.buscar    },
     { label: 'Registrar Ingresos',href: r('reconocimiento.index'), active: active('reconocimiento.index'), icon: I.registro  },
   ],
-  Socio: () => [
+  socio: () => [
     { label: 'Mi panel',            href: r('dashboard'), active: active('dashboard'), icon: I.dashboard  },
     { label: 'Mi membresía',        href: '#',            active: false,               icon: I.membresias },
     { label: 'Carnet digital',      href: '#',            active: false,               icon: I.carnet     },
@@ -241,8 +241,9 @@ export default function AppSidebarLayout({ title = 'Panel', children }) {
     const close  = useCallback(() => setOpen(false), []);
     const toggle = useCallback(() => setOpen(v => !v), []);
 
-    const role  = auth?.user?.role?.nombre ?? 'Administrador';
-    const items = (NAV[role] ?? NAV.Administrador)();
+    const role  = auth?.user?.role?.nombre ?? 'admin';
+    console.log('ROL:', role); // ← agrega esta línea
+    const items = (NAV[role] ?? NAV.admin)();
 
     return (
         <>

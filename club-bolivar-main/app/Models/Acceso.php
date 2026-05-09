@@ -38,6 +38,6 @@ class Acceso extends Model
 
     public function socio()
     {
-        return $this->belongsTo(Socio::class);
+        return $this->belongsTo(Socio::class, 'socio_id');
     }
 }

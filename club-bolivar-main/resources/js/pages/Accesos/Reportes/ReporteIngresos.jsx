@@ -55,12 +55,12 @@ export default function ReporteIngresos() {
     }, []);
 
     return (
-        <AppSidebarLayout title="Reporte de Ingresos">
+        <AppSidebarLayout title="Reporte de Ingresos y salidas del establecimiento">
 
             <div className="max-w-7xl mx-auto p-6 text-white">
 
                 <h1 className="text-2xl font-bold mb-6">
-                    Reporte de Ingresos
+                    Reporte de Ingresos y salidas
                 </h1>
 
                 {/* 🔎 FILTROS */}
