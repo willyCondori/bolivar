@@ -222,9 +222,9 @@ export default function BloqueoSocio({ socio }) {
                     </div>
                     <div className="consequences-list">
                         {[
-                            'Socio: estado → Bloqueado',
-                            'Usuario vinculado: activo → false, deleted → true',
-                            'Membresía activa: deleted → true',
+                            'El Socio estara bloqueado del sistema',
+                            'Usuario sin acceso al sistema',
+                            'Membresía invalida',
                             'El socio perderá acceso inmediato al sistema',
                         ].map(txt => (
                             <div className="consequence-row" key={txt}>

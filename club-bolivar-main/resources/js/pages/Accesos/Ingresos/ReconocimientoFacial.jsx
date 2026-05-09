@@ -147,19 +147,25 @@ export default function ReconocimientoFacial() {
 
                 setReconResult(response.data);
 
-            } catch (e) {
+                } catch (e) {
 
-                setReconResult({
-                    estado: 'error',
-                    mensaje:
-                        e.response?.data?.mensaje ??
-                        'Error del servidor.',
-                });
+                    if (e.response?.status === 429) {
+                        // Bloqueo de 3 minutos — mostrar datos del socio
+                        setReconResult({
+                            ...e.response.data,
+                            nombres: e.response.data.nombres,
+                            apellidos: e.response.data.apellidos,
+                        });
+                    } else {
+                        setReconResult({
+                            estado: 'error',
+                            mensaje:
+                                e.response?.data?.mensaje ??
+                                'Error del servidor.',
+                        });
+                    }
 
-            } finally {
-                setLoading(false);
-            }
-
+                }
         }, 'image/jpeg', 0.9);
     };
 

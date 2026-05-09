@@ -107,7 +107,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/{socio}/editar', [SocioController::class, 'edit'])
         ->name('socios.edit');
 
-    Route::patch('/{socio}', [SocioController::class, 'update'])
+    Route::match(['put', 'patch'], '/{socio}', [SocioController::class, 'update'])
         ->name('socios.update');
 
     // ===============================

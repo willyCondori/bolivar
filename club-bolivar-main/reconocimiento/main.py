@@ -18,7 +18,7 @@ def validar_rostro(path_imagen):
 
         faces = DeepFace.extract_faces(
             img_path=path_imagen,
-            enforce_detection=True
+            enforce_detection=False
         )
 
         # No detectó rostros
@@ -84,7 +84,7 @@ async def reconocer(
                 result = DeepFace.verify(
                     img1_path=path_camera,
                     img2_path=path_db,
-                    enforce_detection=True,
+                    enforce_detection=False,
                     model_name="Facenet"
                 )
 

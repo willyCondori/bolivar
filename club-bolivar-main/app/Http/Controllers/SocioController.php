@@ -131,8 +131,10 @@ class SocioController extends Controller
             'email'     => 'nullable|email',
             'estado'    => 'required',
             'foto'      => 'nullable',
+            'tipo_membresia' => 'nullable|in:Bronce,Plata,Oro', // 👈 SOLO SOCIO
         ]);
 
+        /* ── FOTO ───────────────────────────── */
         if ($request->filled('foto') && str_contains($request->foto, 'data:image')) {
 
             if ($socio->foto_path) {
@@ -142,32 +144,51 @@ class SocioController extends Controller
             $validated['foto_path'] = $this->uploadBase64($request->foto);
         }
 
+        /* ── ACTUALIZAR SOCIO ───────────────── */
         $socio->update($validated);
 
-        if ($request->filled('tipo_membresia')) {
+        /* ───────────────────────────────────────
+        🔥 IMPORTANTE: MEMBRESIA NO USA BRONCE/PLATA/ORO
+        SOLO SE ACTUALIZA SI EXISTE CAMBIO REAL DE PLAN
+        ─────────────────────────────────────── */
+        if ($request->filled('membresia_plan')) {
 
             $membresia = $socio->membresiaActiva;
 
             if ($membresia) {
-                $membresia->update(['tipo' => $request->tipo_membresia]);
+
+                // ⚠️ aquí YA NO usamos tipo_membresia
+                $membresia->update([
+                    'tipo' => $membresia->tipo // se mantiene igual
+                ]);
+
             } else {
+
                 Membresia::create([
                     'id'           => (string) Str::uuid(),
                     'socio_id'     => $socio->id,
-                    'tipo'         => $request->tipo_membresia,
+
+                    // ✔ valor seguro por defecto del sistema membresias
+                    'tipo'         => 'Celeste',
+
                     'fecha_inicio' => now()->toDateString(),
                     'fecha_fin'    => now()->addMonth()->toDateString(),
                     'estado'       => 'activo',
-                    'tipo_membresia' => 'Bronce',
                     'deleted'      => false,
                 ]);
             }
         }
 
+        /* ── FOTO FILE NORMAL ───────────────── */
+        if ($request->hasFile('foto')) {
+            $path = $request->file('foto')->store('socios', 'public');
+            $socio->foto_path = $path;
+            $socio->save();
+        }
+
         return redirect()->route('socios.index')
             ->with('success', 'Socio actualizado correctamente.');
     }
-
     public function destroy(Socio $socio)
     {
         DB::transaction(function () use ($socio) {

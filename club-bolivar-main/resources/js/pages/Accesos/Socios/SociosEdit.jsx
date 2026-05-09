@@ -23,20 +23,19 @@ export default function SociosEdit({ socio }) {
     const webcamRef = useRef();
 
     const { data, setData, post, errors, processing } = useForm({
-        nombres: socio.nombres || '', 
+        nombres: socio.nombres || '',
         apellidos: socio.apellidos || '',
-        ci: socio.ci || '', 
+        ci: socio.ci || '',
         email: socio.email || '',
-        telefono: socio.telefono || '', 
+        telefono: socio.telefono || '',
         direccion: socio.direccion || '',
-        // La fecha se mantiene en el data para enviarla, pero no se expone en un input editable
         fecha_nacimiento: socio.fecha_nacimiento || '',
-        tipo_membresia: socio.tipo_membresia || 'Bronce',
+        tipo_membresia: socio.tipo_membresia || '',
         estado: socio.estado || 'Activo',
-        estado_aprobacion: socio.estado_aprobacion || 'En espera',
+        estado_aprobacion: socio.estado_aprobacion || '',
         observaciones: socio.observaciones || '',
-        foto: null, 
-        _method: 'PUT',
+        foto: null,
+        _method: 'PATCH',
     });
 
     const handleFile = (e) => {
@@ -49,15 +48,27 @@ export default function SociosEdit({ socio }) {
 
     const capture = useCallback(() => {
         const src = webcamRef.current.getScreenshot();
-        setPreview(src); 
-        setData('foto', src);
-        setCamera(false); 
+
+        setPreview(src);
+
+        // ❌ NO enviar base64 como string si backend espera file
+        fetch(src)
+            .then(res => res.blob())
+            .then(blob => {
+                const file = new File([blob], "foto.jpg", { type: "image/jpeg" });
+                setData('foto', file);
+            });
+
+        setCamera(false);
         setShowOpts(false);
-    }, [webcamRef, setData]);
+    }, []);
 
     const submit = (e) => {
         e.preventDefault();
-        post(route('socios.update', socio.id));
+
+        post(route('socios.update', socio.id), {
+            forceFormData: true, // 🔥 ESTE ES EL FIX REAL
+        });
     };
 
     return (

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\Acceso;
 use Carbon\Carbon;
 use App\Models\IntentoAccesoFallido;
+use App\Services\AccesoSocioService;
 
 class ReconocimientoController extends Controller
 {
@@ -28,23 +29,18 @@ class ReconocimientoController extends Controller
             if ($socios->isEmpty()) {
                 return response()->json([
                     'estado' => 'error',
-                    'mensaje' => 'No hay socios registrados para comparar.'
+                    'mensaje' => 'No hay socios registrados.'
                 ], 400);
             }
 
             $urlFastAPI = 'http://127.0.0.1:8001/reconocer';
 
             $requestFastAPI = Http::asMultipart()
-                ->attach(
-                    'file_camera',
-                    file_get_contents($imagenCamara),
-                    'camera.jpg'
-                );
+                ->attach('file_camera', file_get_contents($imagenCamara), 'camera.jpg');
 
             foreach ($socios as $socio) {
 
                 if (Storage::disk('public')->exists($socio->foto_path)) {
-
                     $requestFastAPI->attach(
                         'file_db',
                         Storage::disk('public')->get($socio->foto_path),
@@ -70,6 +66,22 @@ class ReconocimientoController extends Controller
                         'estado' => 'fallo',
                         'mensaje' => 'Socio no encontrado'
                     ]);
+                }
+
+                // 🔥 VALIDACIÓN SOCIO
+                $validator = new AccesoSocioService();
+                $estado = $validator->validarSocio($socioEncontrado);
+
+                if ($estado) {
+
+                    IntentoAccesoFallido::create([
+                        'socio_id' => $socioEncontrado->id,
+                        'ip_dispositivo' => $request->ip(),
+                        'similitud_facial' => $resultado['distance'] ?? null,
+                        'motivo_rechazo' => $estado['motivo'],
+                    ]);
+
+                    return response()->json($estado, 403);
                 }
 
                 // CONTROL 3 MINUTOS
@@ -133,10 +145,7 @@ class ReconocimientoController extends Controller
 
     private function verificarBloqueoEntrada($socioId, $tipo)
     {
-        // SOLO BLOQUEAR ENTRADAS
-        if ($tipo !== 'entrada') {
-            return null;
-        }
+        if ($tipo !== 'entrada') return null;
 
         $limiteTiempo = Carbon::now()->subMinutes(3);
 
@@ -147,7 +156,6 @@ class ReconocimientoController extends Controller
             ->first();
 
         if ($ultimoAcceso) {
-
             return [
                 'estado' => 'bloqueado',
                 'mensaje' => 'Ya existe una entrada reciente (menos de 3 minutos).',

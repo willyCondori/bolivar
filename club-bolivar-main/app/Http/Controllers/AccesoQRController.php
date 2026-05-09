@@ -7,6 +7,8 @@ use App\Models\Socio;
 use App\Models\Acceso;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use App\Services\AccesoSocioService;
+use App\Models\IntentoAccesoFallido;
 
 class AccesoQRController extends Controller
 {
@@ -22,18 +24,29 @@ class AccesoQRController extends Controller
             $socio = Socio::where('qr_token', $request->codigo)->first();
 
             if (!$socio) {
-
                 return response()->json([
                     'estado' => 'fallo',
                     'mensaje' => 'QR inválido'
                 ], 404);
             }
 
+            // 🔥 VALIDACIÓN DE ESTADO SOCIO
+            $validator = new AccesoSocioService();
+            $estado = $validator->validarSocio($socio);
+
+            if ($estado) {
+
+                IntentoAccesoFallido::create([
+                    'socio_id' => $socio->id,
+                    'ip_dispositivo' => $request->ip(),
+                    'motivo_rechazo' => $estado['motivo'],
+                ]);
+
+                return response()->json($estado, 403);
+            }
+
             // CONTROL 3 MINUTOS
-            $bloqueo = $this->verificarBloqueoEntrada(
-                $socio->id,
-                $request->tipo
-            );
+            $bloqueo = $this->verificarBloqueoEntrada($socio->id, $request->tipo);
 
             if ($bloqueo) {
                 return response()->json($bloqueo, 429);
@@ -67,9 +80,7 @@ class AccesoQRController extends Controller
 
     private function verificarBloqueoEntrada($socioId, $tipo)
     {
-        if ($tipo !== 'entrada') {
-            return null;
-        }
+        if ($tipo !== 'entrada') return null;
 
         $limiteTiempo = Carbon::now()->subMinutes(3);
 
@@ -80,7 +91,6 @@ class AccesoQRController extends Controller
             ->first();
 
         if ($ultimoAcceso) {
-
             return [
                 'estado' => 'bloqueado',
                 'mensaje' => 'Ya existe una entrada reciente (menos de 3 minutos).',
