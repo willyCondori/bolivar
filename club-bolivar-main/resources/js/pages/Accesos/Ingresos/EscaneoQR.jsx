@@ -150,10 +150,18 @@ export default function EscaneoQR() {
 
             console.error(e);
 
-            setReconResult({
-                estado: 'error',
-                mensaje: 'Error procesando QR',
-            });
+            // ✅ Respuesta del backend
+            if (e.response?.data) {
+
+                setReconResult(e.response.data);
+
+            } else {
+
+                setReconResult({
+                    estado: 'error',
+                    mensaje: 'Error procesando QR',
+                });
+            }
 
         } finally {
 

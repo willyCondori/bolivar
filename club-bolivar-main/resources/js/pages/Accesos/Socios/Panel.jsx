@@ -43,7 +43,7 @@ export default function Panel({ user, socio, membresia }) {
                         <div style={{ width: '40%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px', borderRight: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.03)' }}>
                             <div style={{ position: 'relative' }}>
                                 <img
-                                    src={socio?.foto_path ? `/storage/${socio.foto_path}` : '/default-user.png'}
+                                    src={socio?.foto_path ? `/storage/${socio.foto_path}` : '/img/default-avatar.png'}
                                     style={{ width: '200px', height: '240px', objectFit: 'cover', borderRadius: '16px', border: '3px solid rgba(59,130,246,0.4)', boxShadow: '0 0 30px rgba(59,130,246,0.2)' }}
                                     alt="Foto socio"
                                 />
@@ -72,7 +72,30 @@ export default function Panel({ user, socio, membresia }) {
 
                                 <div>
                                     <p style={{ fontSize: '10px', color: '#3b82f6', textTransform: 'uppercase', fontWeight: '900', letterSpacing: '2px', marginBottom: '6px' }}>Membresía</p>
-                                    <p style={{ fontSize: '22px', fontWeight: '700', color: '#CD7F32' }}>{membresia?.tipo || 'Bronce'}</p>
+                                <p
+                                    style={{
+                                        fontSize: '22px',
+                                        fontWeight: '700',
+                                        color:
+                                            membresia?.tipo === 'Celeste'
+                                                ? '#38BDF8'
+                                                : membresia?.tipo === 'Dorado'
+                                                ? '#FACC15'
+                                                : membresia?.tipo === 'Platino'
+                                                ? '#E5E7EB'
+                                                : '#CD7F32',
+                                        textShadow:
+                                            membresia?.tipo === 'Celeste'
+                                                ? '0 0 12px rgba(56,189,248,0.6)'
+                                                : membresia?.tipo === 'Dorado'
+                                                ? '0 0 12px rgba(250,204,21,0.6)'
+                                                : membresia?.tipo === 'Platino'
+                                                ? '0 0 12px rgba(229,231,235,0.6)'
+                                                : 'none',
+                                    }}
+                                >
+                                    {membresia?.tipo || 'Bronce'}
+                                </p>
                                 </div>
 
                                 <div>

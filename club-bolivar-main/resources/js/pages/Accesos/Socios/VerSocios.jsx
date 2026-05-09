@@ -178,8 +178,10 @@ export default function SociosIndex({ socios }) {
                                 <tr key={s.id} className="table-row">
                                     <td>
                                         <img
-                                            src={s.foto_path ? `/storage/${s.foto_path}` : '/img/default-avatar.png'}
+                                            src={`/storage/${s.foto_path}`}
                                             className="socio-avatar"
+                                            alt={s.nombres}
+                                            onError={(e) => { e.target.src = '/img/default-avatar.png'; }}
                                         />
                                     </td>
 

@@ -116,11 +116,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/socio/panel', function () {
 
         $user = Auth::user();
-        $socio = Socio::where('user_id', $user->id)->first();
+
+        $socio = Socio::with('membresiaActiva')
+            ->where('user_id', $user->id)
+            ->first();
 
         return Inertia::render('Accesos/Socios/Panel', [
-            'user'  => $user,
-            'socio' => $socio,
+            'user'       => $user,
+            'socio'      => $socio,
+            'membresia'  => $socio?->membresiaActiva,
         ]);
 
     })->name('socio.panel');
