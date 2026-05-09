@@ -181,39 +181,37 @@ export default function RegistrarSocio() {
                                         onChange={(e) => {
                                             const val = e.target.value;
 
-                                            if (!val) {
-                                                setData('fecha_nacimiento', '');
+                                            setData('fecha_nacimiento', val);
+
+                                            // 👇 solo validar cuando la fecha esté completa
+                                            if (!val || val.length !== 10) {
+                                                clearErrors('fecha_nacimiento');
                                                 return;
                                             }
 
-                                            const fecha = new Date(val);
+                                            const [year, month, day] = val.split('-').map(Number);
 
-                                            const edad =
-                                                hoy.getFullYear() - fecha.getFullYear();
+                                            const fecha = new Date(year, month - 1, day);
 
-                                            const mes =
-                                                hoy.getMonth() - fecha.getMonth();
-
-                                            let edadFinal = edad;
-
-                                            if (
-                                                mes < 0 ||
-                                                (mes === 0 &&
-                                                    hoy.getDate() < fecha.getDate())
-                                            ) {
-                                                edadFinal--;
+                                            if (isNaN(fecha.getTime())) {
+                                                setError('fecha_nacimiento', 'Fecha inválida.');
+                                                return;
                                             }
 
-                                            if (edadFinal < 18 || edadFinal > 80) {
-                                                setError(
-                                                    'fecha_nacimiento',
-                                                    'Debe tener entre 18 y 80 años.'
-                                                );
+                                            let edad = hoy.getFullYear() - fecha.getFullYear();
+
+                                            const mes = hoy.getMonth() - fecha.getMonth();
+
+                                            if (mes < 0 || (mes === 0 && hoy.getDate() < fecha.getDate())) {
+                                                edad--;
+                                            }
+
+                                            if (edad < 18 || edad > 80) {
+                                                setError('fecha_nacimiento', 'Debe tener entre 18 y 80 años.');
                                                 return;
                                             }
 
                                             clearErrors('fecha_nacimiento');
-                                            setData('fecha_nacimiento', val);
                                         }}
                                     />
 
