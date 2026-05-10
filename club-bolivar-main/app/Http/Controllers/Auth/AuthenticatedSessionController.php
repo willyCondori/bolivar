@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -33,34 +34,27 @@ class AuthenticatedSessionController extends Controller
 
         $user = Auth::user();
 
-        // ✅ Verificar si el socio está inactivo
+        // ✅ Verificar estado del socio
         if ($user->role && $user->role->nombre === 'socio') {
+
             $socio = \App\Models\Socio::where('user_id', $user->id)->first();
 
-            if ($socio && $socio->estado === 'Inactivo') {
+            if ($socio && in_array($socio->estado, ['Inactivo', 'Bloqueado'])) {
+
                 Auth::guard('web')->logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
 
-                return back()->withErrors([
-                    'email' => 'Tu cuenta está inactiva. Contacta con el administrador.',
-                ]);
-            }
-
-            if ($socio && $socio->estado === 'Bloqueado') {
-                Auth::guard('web')->logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
-
-                return back()->withErrors([
-                    'email' => 'Tu cuenta está bloqueada. Contacta con el administrador.',
+                // ❌ NO invalidar sesión antes del error
+                throw ValidationException::withMessages([
+                    'email' => $socio->estado === 'Inactivo'
+                        ? 'Tu cuenta está inactiva. Contacta con el administrador.'
+                        : 'Tu cuenta está bloqueada. Contacta con el administrador.',
                 ]);
             }
         }
 
         $request->session()->regenerate();
 
-        // Redirección según rol
+        // ✅ Redirección según rol
         if ($user->role && $user->role->nombre === 'socio') {
             return redirect()->route('socio.panel');
         }

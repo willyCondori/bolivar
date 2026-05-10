@@ -82,12 +82,13 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/{socio}/bloquear',  [BloqueoSocioController::class, 'show'])     ->name('socios.bloquear.show');
             Route::post('/{socio}/bloquear', [BloqueoSocioController::class, 'execute'])  ->name('socios.bloquear');
             Route::patch('/{socio}/desbloquear', [BloqueoSocioController::class, 'desbloquear'])->name('socios.desbloquear');
-        });
 
         Route::get('/{socio}/editar', [SocioController::class, 'edit'])
             ->name('socios.edit');
         Route::match(['put', 'patch'], '/{socio}', [SocioController::class, 'update'])
             ->name('socios.update');
+            });
+
     });
 
     // ===============================
