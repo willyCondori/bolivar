@@ -5,13 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use App\Traits\Auditable;
-use App\Models\Membresia;
 
 class Socio extends Model
 {
     use Auditable;
 
     protected $table = 'socios';
+
+    protected $keyType = 'string';
+    public $incrementing = false;
+    public $timestamps = false;
 
     protected $fillable = [
         'user_id',
@@ -34,44 +37,63 @@ class Socio extends Model
     ];
 
     protected $casts = [
-        'fecha_nacimiento'            => 'date',
-        'fecha_ingreso'               => 'date',
-        'activo'                      => 'boolean',
-        'deleted'                     => 'boolean',
+        'fecha_nacimiento' => 'date',
+        'fecha_ingreso'    => 'date',
+        'activo'           => 'boolean',
+        'deleted'          => 'boolean',
     ];
 
-    protected $keyType = 'string';
-    public $incrementing = false;
-    public $timestamps   = false;
+    /* ── Boot optimizado ─────────────────────────────────────────── */
 
     protected static function booted(): void
     {
         static::creating(function ($model) {
-            if (!$model->id) {
-                $model->id = (string) Str::uuid();
-            }
+            $model->id = $model->id ?? (string) Str::uuid();
         });
     }
 
-    /* ── Relaciones ─────────────────────────────────────────────────── */
+    /* ── Relaciones ─────────────────────────────────────────────── */
 
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    /** Todas las membresías históricas del socio */
     public function membresias()
     {
         return $this->hasMany(Membresia::class, 'socio_id');
     }
 
-    /** La membresía activa y vigente más reciente */
+    /**
+     * Membresia activa optimizada (SIN orderBy pesado en relación)
+     */
     public function membresiaActiva()
     {
-        return $this->hasOne(Membresia::class)
-        ->where('estado', 'activo')
-        ->where('deleted', false)
-        ->latest('fecha_inicio');
+        return $this->hasOne(Membresia::class, 'socio_id')
+            ->where([
+                ['estado', '=', 'activo'],
+                ['deleted', '=', false],
+            ])
+            ->latest('fecha_inicio');
+    }
+
+    /* ── Scopes útiles para performance ─────────────────────────── */
+
+    public function scopeActivos($query)
+    {
+        return $query->where([
+            ['estado', '=', 'activo'],
+            ['deleted', '=', false],
+        ]);
+    }
+
+    public function scopeInactivos($query)
+    {
+        return $query->where('estado', 'inactivo');
+    }
+
+    public function scopeBloqueados($query)
+    {
+        return $query->where('estado', 'bloqueado');
     }
 }

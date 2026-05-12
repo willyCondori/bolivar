@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Acceso;
-use Illuminate\Support\Facades\DB;
 
 class ReporteController extends Controller
 {
@@ -14,8 +13,11 @@ class ReporteController extends Controller
             $fecha = $request->fecha;
             $tipo  = $request->tipo;
 
-            $query = Acceso::with('socio')
-                ->select('id', 'socio_id', 'tipo', 'metodo_verificacion', 'created_at');
+            $query = Acceso::query()
+                ->select('id', 'socio_id', 'tipo', 'metodo_verificacion', 'created_at')
+                ->with([
+                    'socio:id,nombres,apellidos'
+                ]);
 
             if ($fecha) {
                 $query->whereDate('created_at', $fecha);
@@ -25,17 +27,19 @@ class ReporteController extends Controller
                 $query->where('tipo', $tipo);
             }
 
-            $accesos = $query->orderByDesc('created_at')->get();
+            $accesos = $query
+                ->latest('created_at')
+                ->get();
 
             return response()->json([
                 'accesos'  => $accesos,
                 'fallidos' => [],
             ]);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json([
                 'error'   => true,
-                'mensaje' => $e->getMessage(),
+                'mensaje' => 'Error al generar reporte',
             ], 500);
         }
     }

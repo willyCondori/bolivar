@@ -150,7 +150,7 @@ export default function EscaneoQR() {
 
             console.error(e);
 
-            // ✅ Respuesta del backend
+            // Respuesta del backend
             if (e.response?.data) {
 
                 setReconResult(e.response.data);

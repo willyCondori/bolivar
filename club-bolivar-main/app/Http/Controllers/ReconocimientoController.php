@@ -19,18 +19,19 @@ class ReconocimientoController extends Controller
     {
         $request->validate([
             'imagen' => 'required|image|max:5120',
-            'tipo' => 'required|in:entrada,salida',
+            'tipo'   => 'required|in:entrada,salida',
         ]);
 
         try {
-
             $imagenCamara = $request->file('imagen');
 
-            $socios = Socio::whereNotNull('foto_path')->get();
+            $socios = Socio::whereNotNull('foto_path')
+                ->select('id', 'foto_path')
+                ->get();
 
             if ($socios->isEmpty()) {
                 return response()->json([
-                    'estado' => 'error',
+                    'estado'  => 'error',
                     'mensaje' => 'No hay socios registrados.'
                 ], 400);
             }
@@ -38,20 +39,27 @@ class ReconocimientoController extends Controller
             $urlFastAPI = 'http://127.0.0.1:8001/reconocer';
 
             $requestFastAPI = Http::asMultipart()
-                ->attach('file_camera', file_get_contents($imagenCamara), 'camera.jpg');
+                ->attach(
+                    'file_camera',
+                    file_get_contents($imagenCamara->getRealPath()),
+                    'camera.jpg'
+                );
 
             foreach ($socios as $socio) {
 
-                if (Storage::disk('public')->exists($socio->foto_path)) {
+                $path = $socio->foto_path;
+
+                if ($path && Storage::disk('public')->exists($path)) {
+
                     $requestFastAPI->attach(
                         'file_db',
-                        Storage::disk('public')->get($socio->foto_path),
+                        Storage::disk('public')->get($path),
                         $socio->id . '.jpg'
                     );
                 }
             }
 
-            $response = $requestFastAPI->post($urlFastAPI);
+            $response = $requestFastAPI->timeout(30)->post($urlFastAPI);
 
             if ($response->failed()) {
                 throw new \Exception("Servicio de IA no disponible.");
@@ -59,34 +67,33 @@ class ReconocimientoController extends Controller
 
             $resultado = $response->json();
 
-            if ($resultado['match'] && !empty($resultado['id'])) {
+            if (!empty($resultado['match']) && !empty($resultado['id'])) {
 
-                $socioEncontrado = Socio::find($resultado['id']);
+                $socioEncontrado = Socio::select('id', 'nombres', 'apellidos')
+                    ->find($resultado['id']);
 
                 if (!$socioEncontrado) {
                     return response()->json([
-                        'estado' => 'fallo',
+                        'estado'  => 'fallo',
                         'mensaje' => 'Socio no encontrado'
                     ]);
                 }
 
-                // VALIDACIÓN SOCIO
                 $validator = new AccesoSocioService();
                 $estado = $validator->validarSocio($socioEncontrado);
 
                 if ($estado) {
 
                     IntentoAccesoFallido::create([
-                        'socio_id' => $socioEncontrado->id,
-                        'ip_dispositivo' => $request->ip(),
-                        'similitud_facial' => $resultado['distance'] ?? null,
-                        'motivo_rechazo' => $estado['motivo'],
+                        'socio_id'        => $socioEncontrado->id,
+                        'ip_dispositivo'  => $request->ip(),
+                        'similitud_facial'=> $resultado['distance'] ?? null,
+                        'motivo_rechazo'  => $estado['motivo'],
                     ]);
 
                     return response()->json($estado, 403);
                 }
 
-                // CONTROL 3 MINUTOS
                 $bloqueo = $this->verificarBloqueoEntrada(
                     $socioEncontrado->id,
                     $request->tipo
@@ -95,61 +102,62 @@ class ReconocimientoController extends Controller
                 if ($bloqueo) {
 
                     IntentoAccesoFallido::create([
-                        'socio_id' => $socioEncontrado->id,
-                        'ip_dispositivo' => $request->ip(),
-                        'similitud_facial' => $resultado['distance'] ?? null,
-                        'motivo_rechazo' => 'Bloqueo temporal (3 minutos)',
+                        'socio_id'        => $socioEncontrado->id,
+                        'ip_dispositivo'  => $request->ip(),
+                        'similitud_facial'=> $resultado['distance'] ?? null,
+                        'motivo_rechazo'  => 'Bloqueo temporal (3 minutos)',
                     ]);
 
                     return response()->json($bloqueo, 429);
                 }
 
-            $acceso = Acceso::create([
-                'socio_id'            => $socioEncontrado->id,
-                'tipo'                => $request->tipo,
-                'metodo_verificacion' => 'facial',
-                'resultado_pdi'       => 'aprobado',
-                'similitud_facial'    => 1 - $resultado['distance'],
-                'ip_dispositivo'      => $request->ip(),
-                'dispositivo_info'    => $request->userAgent(),
-            ]);
+                $acceso = Acceso::create([
+                    'socio_id'            => $socioEncontrado->id,
+                    'tipo'                => $request->tipo,
+                    'metodo_verificacion' => 'facial',
+                    'resultado_pdi'       => 'aprobado',
+                    'similitud_facial'    => 1 - ($resultado['distance'] ?? 0),
+                    'ip_dispositivo'      => $request->ip(),
+                    'dispositivo_info'    => $request->userAgent(),
+                ]);
 
-            $acceso->load('socio');
+                // 🔥 OPTIMIZACIÓN: consulta más ligera
+                $admins = User::whereHas('role', function ($q) {
+                        $q->where('nombre', 'admin');
+                    })
+                    ->select('id')
+                    ->get();
 
-            $admins = User::whereHas('role', function ($q) {
-                $q->where('nombre', 'admin');
-            })->get();
-
-            foreach ($admins as $admin) {
-                $admin->notify(new AccesoRegistradoNotification($acceso));
-            }
+                foreach ($admins as $admin) {
+                    $admin->notify(new AccesoRegistradoNotification($acceso));
+                }
 
                 return response()->json([
-                    'estado' => 'exito',
-                    'nombres' => $socioEncontrado->nombres,
-                    'apellidos' => $socioEncontrado->apellidos,
-                    'id' => $socioEncontrado->id,
-                    'tipo' => $request->tipo,
-                    'mensaje' => 'Acceso concedido'
+                    'estado'   => 'exito',
+                    'nombres'  => $socioEncontrado->nombres,
+                    'apellidos'=> $socioEncontrado->apellidos,
+                    'id'       => $socioEncontrado->id,
+                    'tipo'     => $request->tipo,
+                    'mensaje'  => 'Acceso concedido'
                 ]);
             }
 
             IntentoAccesoFallido::create([
-                'socio_id' => null,
-                'ip_dispositivo' => $request->ip(),
-                'similitud_facial' => $resultado['distance'] ?? null,
-                'motivo_rechazo' => 'No identificado por IA',
+                'socio_id'        => null,
+                'ip_dispositivo'  => $request->ip(),
+                'similitud_facial'=> $resultado['distance'] ?? null,
+                'motivo_rechazo'  => 'No identificado por IA',
             ]);
 
             return response()->json([
-                'estado' => 'fallo',
+                'estado'  => 'fallo',
                 'mensaje' => 'Usuario no identificado'
             ]);
 
         } catch (\Exception $e) {
 
             return response()->json([
-                'estado' => 'error',
+                'estado'  => 'error',
                 'mensaje' => 'Error: ' . $e->getMessage()
             ], 500);
         }
@@ -159,18 +167,18 @@ class ReconocimientoController extends Controller
     {
         if ($tipo !== 'entrada') return null;
 
-        $limiteTiempo = Carbon::now()->subMinutes(3);
+        $limiteTiempo = now()->subMinutes(3);
 
         $ultimoAcceso = Acceso::where('socio_id', $socioId)
             ->where('tipo', 'entrada')
             ->where('created_at', '>=', $limiteTiempo)
             ->latest()
-            ->first();
+            ->first(['id', 'created_at']);
 
         if ($ultimoAcceso) {
             return [
-                'estado' => 'bloqueado',
-                'mensaje' => 'Ya existe una entrada reciente (menos de 3 minutos).',
+                'estado'        => 'bloqueado',
+                'mensaje'       => 'Ya existe una entrada reciente (menos de 3 minutos).',
                 'ultimo_acceso' => $ultimoAcceso->created_at
             ];
         }

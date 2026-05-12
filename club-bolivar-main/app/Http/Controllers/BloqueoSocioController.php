@@ -10,8 +10,13 @@ class BloqueoSocioController extends Controller
 {
     public function show(Socio $socio)
     {
+        $socio->load([
+            'membresias:id,socio_id,estado,deleted,fecha_inicio,fecha_fin',
+            'user:id,activo,deleted'
+        ]);
+
         return Inertia::render('Accesos/Socios/BloqueoSocio', [
-            'socio' => $socio->load(['membresias', 'user']),
+            'socio' => $socio,
         ]);
     }
 
@@ -21,26 +26,23 @@ class BloqueoSocioController extends Controller
             'motivo' => 'nullable|string|max:500',
         ]);
 
-        // 1. Bloquear socio
         $socio->update([
             'estado'        => 'bloqueado',
             'observaciones' => $request->motivo,
         ]);
 
-        // 2. Desactivar usuario relacionado
         if ($socio->user) {
-            $socio->user->update([
+            $socio->user()->update([
                 'activo'  => false,
                 'deleted' => true,
             ]);
         }
 
-        // 3. Desactivar membresías activas
         $socio->membresias()
             ->where('estado', 'activo')
             ->update([
                 'deleted' => true,
-                'estado' => 'inactivo'
+                'estado'  => 'inactivo',
             ]);
 
         return redirect()
@@ -50,25 +52,23 @@ class BloqueoSocioController extends Controller
 
     public function desbloquear(Socio $socio)
     {
-        // 1. Reactivar socio
         $socio->update([
             'estado'        => 'activo',
             'observaciones' => null,
         ]);
 
-        // 2. Reactivar usuario relacionado
         if ($socio->user) {
-            $socio->user->update([
+            $socio->user()->update([
                 'activo'  => true,
                 'deleted' => false,
             ]);
         }
 
-        // 3. Reactivar membresías eliminadas
         $socio->membresias()
+            ->where('deleted', true)
             ->update([
                 'deleted' => false,
-                'estado' => 'activo',
+                'estado'  => 'activo',
             ]);
 
         return redirect()

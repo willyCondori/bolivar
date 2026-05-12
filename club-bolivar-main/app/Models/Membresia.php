@@ -7,18 +7,20 @@ use Illuminate\Support\Str;
 
 class Membresia extends Model
 {
-    // La tabla no usa timestamps de Laravel (created_at/updated_at por defecto)
     public $timestamps = false;
 
     protected $table = 'membresias';
 
+    protected $keyType = 'string';
+    public $incrementing = false;
+
     protected $fillable = [
         'id',
         'socio_id',
-        'tipo',           
+        'tipo',
         'fecha_inicio',
         'fecha_fin',
-        'estado',         // activo | vencido | cancelado
+        'estado',
         'deleted',
     ];
 
@@ -28,31 +30,39 @@ class Membresia extends Model
         'fecha_fin'    => 'date',
     ];
 
-    // UUID manual
-    protected static function boot()
+    /* ── Boot optimizado ─────────────────────────────────────────── */
+
+    protected static function booted(): void
     {
-        parent::boot();
         static::creating(function ($model) {
-            if (empty($model->id)) {
-                $model->id = (string) Str::uuid();
-            }
+            $model->id = $model->id ?? (string) Str::uuid();
         });
     }
 
-    public function getIncrementing() { return false; }
-    public function getKeyType()      { return 'string'; }
+    /* ── Relaciones ─────────────────────────────────────────────── */
 
-    /* ── Relaciones ─────────────────────────────────────────────────── */
     public function socio()
     {
-        return $this->belongsTo(Socio::class);
+        return $this->belongsTo(Socio::class, 'socio_id');
     }
 
-    /* ── Scopes ─────────────────────────────────────────────────────── */
+    /* ── Scopes optimizados ─────────────────────────────────────── */
+
     public function scopeActiva($query)
     {
-        return $query->where('estado', 'activo')
-                     ->where('deleted', false)
-                     ->where('fecha_fin', '>=', now()->toDateString());
+        return $query->where([
+            ['estado', '=', 'activo'],
+            ['deleted', '=', false],
+        ])->where('fecha_fin', '>=', now()->toDateString());
+    }
+
+    public function scopeNoEliminadas($query)
+    {
+        return $query->where('deleted', false);
+    }
+
+    public function scopeVigentes($query)
+    {
+        return $query->where('fecha_fin', '>=', now()->toDateString());
     }
 }

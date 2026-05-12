@@ -20,6 +20,7 @@
 @import './pages/accesos.css';
 @import './pages/qr.css';
 @import './pages/facial.css';
+@import './layouts/sidebar.css';
 
 @tailwind base;
 @tailwind components;

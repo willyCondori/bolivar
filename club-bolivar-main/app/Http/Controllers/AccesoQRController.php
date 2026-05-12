@@ -20,26 +20,28 @@ class AccesoQRController extends Controller
 
             $request->validate([
                 'codigo' => 'required',
-                'tipo' => 'required|in:entrada,salida'
+                'tipo'   => 'required|in:entrada,salida'
             ]);
 
-            $socio = Socio::where('qr_token', $request->codigo)->first();
+            // 🔥 OPTIMIZACIÓN: solo campos necesarios
+            $socio = Socio::select('id', 'nombres', 'apellidos', 'qr_token')
+                ->where('qr_token', $request->codigo)
+                ->first();
 
             if (!$socio) {
                 return response()->json([
-                    'estado' => 'fallo',
+                    'estado'  => 'fallo',
                     'mensaje' => 'QR inválido'
                 ], 404);
             }
 
-            // 🔥 VALIDACIÓN DE ESTADO SOCIO
             $validator = new AccesoSocioService();
             $estado = $validator->validarSocio($socio);
 
             if ($estado) {
 
                 IntentoAccesoFallido::create([
-                    'socio_id' => $socio->id,
+                    'socio_id'       => $socio->id,
                     'ip_dispositivo' => $request->ip(),
                     'motivo_rechazo' => $estado['motivo'],
                 ]);
@@ -47,7 +49,6 @@ class AccesoQRController extends Controller
                 return response()->json($estado, 403);
             }
 
-            // CONTROL 3 MINUTOS
             $bloqueo = $this->verificarBloqueoEntrada($socio->id, $request->tipo);
 
             if ($bloqueo) {
@@ -55,39 +56,37 @@ class AccesoQRController extends Controller
             }
 
             $acceso = Acceso::create([
-                'socio_id'             => $socio->id,
-                'user_id'              => Auth::id() ?? null,
-                'tipo'                 => $request->tipo,
-                'metodo_verificacion'  => 'qr',
-                'resultado_pdi'        => 'aprobado',
-                'ip_dispositivo'       => $request->ip(),
-                'dispositivo_info'     => $request->userAgent(),
+                'socio_id'            => $socio->id,
+                'user_id'             => Auth::id(),
+                'tipo'                => $request->tipo,
+                'metodo_verificacion' => 'qr',
+                'resultado_pdi'       => 'aprobado',
+                'ip_dispositivo'      => $request->ip(),
+                'dispositivo_info'    => $request->userAgent(),
             ]);
 
-            $acceso->load('socio'); // ← agregar esto
-
             $admins = User::whereHas('role', function ($q) {
-                $q->where('nombre', 'admin');
-            })->get();
+                    $q->where('nombre', 'admin');
+                })
+                ->select('id')
+                ->get();
 
             foreach ($admins as $admin) {
                 $admin->notify(new AccesoRegistradoNotification($acceso));
             }
 
             return response()->json([
-                'estado' => 'exito',
-                'nombres' => $socio->nombres,
+                'estado'    => 'exito',
+                'nombres'   => $socio->nombres,
                 'apellidos' => $socio->apellidos
             ]);
 
         } catch (\Exception $e) {
+
             return response()->json([
                 'estado'  => 'error',
                 'mensaje' => 'Error interno',
-                'debug'   => $e->getMessage(),
-                'line'    => $e->getLine(),
-                'file'    => $e->getFile(),
-                'trace'   => $e->getTraceAsString(),
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }
@@ -96,18 +95,22 @@ class AccesoQRController extends Controller
     {
         if ($tipo !== 'entrada') return null;
 
-        $limiteTiempo = Carbon::now()->subMinutes(3);
+        $limiteTiempo = now()->subMinutes(3);
 
-        $ultimoAcceso = Acceso::where('socio_id', $socioId)
-            ->where('tipo', 'entrada')
+        // 🔥 OPTIMIZACIÓN: solo columnas necesarias
+        $ultimoAcceso = Acceso::select('id', 'created_at')
+            ->where([
+                ['socio_id', '=', $socioId],
+                ['tipo', '=', 'entrada'],
+            ])
             ->where('created_at', '>=', $limiteTiempo)
             ->latest()
             ->first();
 
         if ($ultimoAcceso) {
             return [
-                'estado' => 'bloqueado',
-                'mensaje' => 'Ya existe una entrada reciente (menos de 3 minutos).',
+                'estado'        => 'bloqueado',
+                'mensaje'       => 'Ya existe una entrada reciente (menos de 3 minutos).',
                 'ultimo_acceso' => $ultimoAcceso->created_at
             ];
         }

@@ -12,8 +12,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use App\Models\Role;
-use Illuminate\Support\Facades\Http;  // ← AGREGAR
-use Illuminate\Support\Facades\Log;   // ← AGREGAR
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class SocioController extends Controller
 {
@@ -105,11 +105,6 @@ class SocioController extends Controller
             ]);
         });
 
-        // ✅ Generar embedding DESPUÉS de confirmar la transacción
-        if ($socio) {
-            $this->generarEmbedding($socio->id, $fotoPath);
-        }
-
         return redirect()->route('socios.index');
     }
 
@@ -183,11 +178,6 @@ class SocioController extends Controller
             }
         }
 
-        // ✅ Regenerar embedding si la foto cambió
-        if ($fotoActualizada) {
-            $this->generarEmbedding($socio->id, $fotoActualizada);
-        }
-
         return redirect()->route('socios.index')
             ->with('success', 'Socio actualizado correctamente.');
     }
@@ -253,28 +243,4 @@ class SocioController extends Controller
         return 'fotos_socios/' . $fileName;
     }
 
-    /**
-     * Llama al microservicio FastAPI para generar y guardar el embedding.
-     * No bloquea ni lanza excepción si falla.
-     */
-    private function generarEmbedding(string $socioId, string $fotoPath): void
-    {
-        try {
-            $url = rtrim(config('services.fastapi.url'), '/');
-
-            $response = Http::timeout(30)->post("{$url}/generar-embedding/{$socioId}", [
-                'foto_path' => $fotoPath,
-            ]);
-
-            if (!$response->successful() || !($response->json('success') ?? false)) {
-                Log::warning("Embedding no generado para socio {$socioId}", [
-                    'respuesta' => $response->json(),
-                ]);
-            }
-
-        } catch (\Exception $e) {
-            // No romper el flujo principal si FastAPI no está disponible
-            Log::error("Error al generar embedding para socio {$socioId}: " . $e->getMessage());
-        }
-    }
 }

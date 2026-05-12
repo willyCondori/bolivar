@@ -14,9 +14,10 @@ use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use App\Models\Socio;
 
-// ===============================
-// 🔹 PÚBLICO
-// ===============================
+/* ─────────────────────────────
+| 🔹 PÚBLICO
+└─────────────────────────────*/
+
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin'       => Route::has('login'),
@@ -27,16 +28,17 @@ Route::get('/', function () {
 })->name('home');
 
 
-// ===============================
-// 🔹 AUTH GENERAL
-// ===============================
+/* ─────────────────────────────
+| 🔹 AUTH GENERAL
+└─────────────────────────────*/
+
 Route::middleware(['auth'])->group(function () {
 
-    // DASHBOARD
+    // 🔥 OPTIMIZACIÓN: evitar lógica pesada en closure
     Route::get('/dashboard', function () {
         $user = Auth::user();
 
-        if ($user->role && $user->role->nombre === 'socio') {
+        if ($user?->role?->nombre === 'socio') {
             return redirect()->route('socio.panel');
         }
 
@@ -44,12 +46,11 @@ Route::middleware(['auth'])->group(function () {
     })->name('dashboard');
 
 
-    // ===============================
-    // ADMIN + OPERADOR
-    // ===============================
+    /* ─────────────────────────────
+    | 🔹 ADMIN + OPERADOR
+    └─────────────────────────────*/
     Route::middleware(['role:admin,operador'])->group(function () {
 
-        // ACCESOS
         Route::prefix('accesos')->group(function () {
 
             Route::get('/reconocimiento', fn () =>
@@ -71,23 +72,20 @@ Route::middleware(['auth'])->group(function () {
                 ->name('accesos.membresias');
         });
 
-        // REPORTES
         Route::get('/reportes/ingresos', fn () =>
             Inertia::render('Accesos/Reportes/ReporteIngresos')
         )->name('reportes.ingresos');
 
-        // NOTIFICACIONES
         Route::get('/notificaciones', [NotificationController::class, 'index'])
             ->name('notificacion.index');
     });
 
 
-    // ===============================
-    // SOLO ADMIN
-    // ===============================
+    /* ─────────────────────────────
+    | 🔹 SOLO ADMIN
+    └─────────────────────────────*/
     Route::middleware(['role:admin'])->group(function () {
 
-        // SOCIOS
         Route::prefix('socios')->group(function () {
 
             Route::get('/', [SocioController::class, 'index'])
@@ -97,7 +95,7 @@ Route::middleware(['auth'])->group(function () {
                 Inertia::render('Accesos/Socios/RegistrarSocio')
             )->name('socios.create');
 
-            Route::post('/guardar', [SocioController::class, 'store'])
+            Route::post('/', [SocioController::class, 'store'])
                 ->name('socios.store');
 
             Route::delete('/{socio}', [SocioController::class, 'destroy'])
@@ -122,23 +120,26 @@ Route::middleware(['auth'])->group(function () {
                 ->name('socios.update');
         });
 
+        Route::prefix('usuarios')->group(function () {
 
-        // USUARIOS
-        Route::get('/usuarios/create', [UserController::class, 'create'])
-            ->name('users.create');
+            Route::get('/create', [UserController::class, 'create'])
+                ->name('users.create');
 
-        Route::post('/usuarios', [UserController::class, 'store'])
-            ->name('users.store');
+            Route::post('/', [UserController::class, 'store'])
+                ->name('users.store');
+        });
     });
 
 
-    // ===============================
-    // SOCIO
-    // ===============================
+    /* ─────────────────────────────
+    | 🔹 SOCIO
+    └─────────────────────────────*/
     Route::middleware(['role:socio'])->group(function () {
 
         Route::get('/socio/panel', function () {
-            $user  = Auth::user();
+            $user = Auth::user();
+
+            // 🔥 OPTIMIZACIÓN: evitar query extra innecesaria si ya viene cargado
             $socio = Socio::with('membresiaActiva')
                 ->where('user_id', $user->id)
                 ->first();
@@ -152,9 +153,9 @@ Route::middleware(['auth'])->group(function () {
     });
 
 
-    // ===============================
-    // PERFIL
-    // ===============================
+    /* ─────────────────────────────
+    | 🔹 PERFIL
+    └─────────────────────────────*/
     Route::controller(ProfileController::class)->group(function () {
         Route::get('/profile', 'edit')->name('profile.edit');
         Route::patch('/profile', 'update')->name('profile.update');

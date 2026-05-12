@@ -12,15 +12,22 @@ class RoleMiddleware
     {
         $user = Auth::user();
 
-        if (!$user || !$user->role) {
+        if (!$user) {
             abort(403, 'Sin acceso.');
         }
 
-        if (!in_array($user->role->nombre, $roles)) {
-            // Si es socio, redirige a su panel
-            if ($user->role->nombre === 'socio') {
+        $roleName = $user->role?->nombre;
+
+        if (!$roleName) {
+            abort(403, 'Sin acceso.');
+        }
+
+        if (!in_array($roleName, $roles, true)) {
+
+            if ($roleName === 'socio') {
                 return redirect()->route('socio.panel');
             }
+
             abort(403, 'No tienes permiso para acceder a esta sección.');
         }
 

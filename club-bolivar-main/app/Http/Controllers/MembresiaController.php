@@ -9,35 +9,31 @@ use Illuminate\Support\Str;
 
 class MembresiaController extends Controller
 {
-    /* ── HELPERS ──────────────────────────────────────────────────────────── */
+    /* ── HELPERS OPTIMIZADO ───────────────────────────────────────── */
 
-    /**
-     * Marca como 'caducado' todas las membresías activas cuya fecha_fin
-     * ya pasó. Se llama al inicio de cualquier operación de consulta/listado.
-     */
     private function caducarVencidas(): void
     {
         DB::table('membresias')
-            ->where('estado', 'activo')
-            ->where('deleted', false)
+            ->where([
+                ['estado', '=', 'activo'],
+                ['deleted', '=', false],
+            ])
             ->whereDate('fecha_fin', '<', now()->toDateString())
             ->update(['estado' => 'caducado']);
     }
 
-    /* ── CRUD ─────────────────────────────────────────────────────────────── */
+    /* ── INDEX OPTIMIZADO ─────────────────────────────────────────── */
 
-    /**
-     * Mostrar listado de membresías con sus socios.
-     */
     public function index()
     {
-        // Primero caducar las vencidas antes de mostrar
         $this->caducarVencidas();
 
         $membresias = DB::table('membresias as m')
             ->join('socios as s', 'm.socio_id', '=', 's.id')
-            ->where('m.deleted', false)
-            ->where('s.deleted', false)
+            ->where([
+                ['m.deleted', '=', false],
+                ['s.deleted', '=', false],
+            ])
             ->select(
                 'm.id',
                 'm.tipo',
@@ -45,51 +41,57 @@ class MembresiaController extends Controller
                 'm.fecha_inicio',
                 'm.fecha_fin',
                 's.id as socio_id',
-                's.nombres',
-                's.apellidos'
+                DB::raw("CONCAT(s.nombres, ' ', s.apellidos) as nombre")
             )
             ->orderBy('m.tipo')
             ->get();
 
-        // Agrupar por tipo de membresía
-        $agrupadas = $membresias->groupBy('tipo')->map(function ($items, $tipo) {
-            return [
-                'tipo'   => $tipo,
-                'total'  => $items->count(),
-                'socios' => $items->map(fn($item) => [
-                    'id'           => $item->socio_id,
-                    'nombre'       => $item->nombres . ' ' . $item->apellidos,
-                    'estado'       => $item->estado,
-                    'fecha_inicio' => $item->fecha_inicio,
-                    'fecha_fin'    => $item->fecha_fin,
-                ])->values(),
+        $agrupadas = [];
+
+        foreach ($membresias as $item) {
+            $tipo = $item->tipo;
+
+            if (!isset($agrupadas[$tipo])) {
+                $agrupadas[$tipo] = [
+                    'tipo'   => $tipo,
+                    'total'  => 0,
+                    'socios' => [],
+                ];
+            }
+
+            $agrupadas[$tipo]['total']++;
+
+            $agrupadas[$tipo]['socios'][] = [
+                'id'           => $item->socio_id,
+                'nombre'       => $item->nombre,
+                'estado'       => $item->estado,
+                'fecha_inicio' => $item->fecha_inicio,
+                'fecha_fin'    => $item->fecha_fin,
             ];
-        })->values();
+        }
 
         return Inertia::render('Accesos/Membresias/Membresias', [
-            'membresias' => $agrupadas,
+            'membresias' => array_values($agrupadas),
         ]);
     }
 
-    /**
-     * Mostrar detalle de una membresía.
-     */
     public function show($id)
     {
         $this->caducarVencidas();
 
-        $membresia = DB::table('membresias as m')
-            ->join('socios as s', 'm.socio_id', '=', 's.id')
-            ->where('m.id', $id)
-            ->select('m.*', 's.nombres', 's.apellidos')
-            ->first();
-
-        return response()->json($membresia);
+        return response()->json(
+            DB::table('membresias as m')
+                ->join('socios as s', 'm.socio_id', '=', 's.id')
+                ->where('m.id', $id)
+                ->select(
+                    'm.*',
+                    's.nombres',
+                    's.apellidos'
+                )
+                ->first()
+        );
     }
 
-    /**
-     * Crear membresía.
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -113,28 +115,27 @@ class MembresiaController extends Controller
             ->with('success', 'Membresía creada correctamente');
     }
 
-    /**
-     * Cambiar estado: activo ↔ inactivo.
-     * Las membresías caducadas NO se pueden reactivar desde aquí;
-     * para eso hay que renovar (crear una nueva).
-     */
     public function updateEstado($id)
     {
-        $membresia = DB::table('membresias')->where('id', $id)->first();
+        $membresia = DB::table('membresias')
+            ->select('id', 'estado')
+            ->where('id', $id)
+            ->first();
 
         if (!$membresia) {
             return back()->with('error', 'Membresía no encontrada');
         }
 
         if ($membresia->estado === 'caducado') {
-            return back()->with('error', 'No se puede reactivar una membresía caducada. Debe renovarla.');
+            return back()->with('error', 'No se puede reactivar una caducada');
         }
 
-        $nuevoEstado = match ($membresia->estado) {
+        $estadoMap = [
             'activo'   => 'inactivo',
             'inactivo' => 'activo',
-            default    => 'activo',
-        };
+        ];
+
+        $nuevoEstado = $estadoMap[$membresia->estado] ?? 'activo';
 
         DB::table('membresias')
             ->where('id', $id)
@@ -143,9 +144,6 @@ class MembresiaController extends Controller
         return back()->with('success', 'Estado actualizado');
     }
 
-    /**
-     * Eliminado lógico.
-     */
     public function destroy($id)
     {
         DB::table('membresias')
