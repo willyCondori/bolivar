@@ -23,12 +23,12 @@ class SocioController extends Controller
 
         $query = Socio::with('membresiaActiva');
 
-        if ($estado === 'Activo') {
-            $query->where('estado', 'Activo')->where('deleted', 0);
-        } elseif ($estado === 'Inactivo') {
-            $query->where('estado', 'Inactivo');
-        } elseif ($estado === 'Bloqueado') {
-            $query->where('estado', 'Bloqueado');
+        if ($estado === 'activo') {
+            $query->where('estado', 'activo')->where('deleted', 0);
+        } elseif ($estado === 'inactivo') {
+            $query->where('estado', 'inactivo');
+        } elseif ($estado === 'bloqueado') {
+            $query->where('estado', 'bloqueado');
         } elseif ($estado === 'Todos') {
             $query->where('deleted', 0);
         }
@@ -48,7 +48,6 @@ class SocioController extends Controller
             'telefono'       => ['required', 'digits:8', 'regex:/^[67][0-9]{7}$/'],
             'email'          => 'required|email|unique:users,email',
             'password'       => 'required|min:6|confirmed',
-            'tipo_membresia' => 'required|in:Celeste,Dorado,Platino',
             'foto'           => 'required|string',
         ]);
 
@@ -83,8 +82,8 @@ class SocioController extends Controller
                 'fecha_nacimiento'    => $request->fecha_nacimiento,
                 'telefono'            => $request->telefono,
                 'direccion'           => $request->direccion,
-                'estado'              => 'Activo',
-                'estado_aprobacion'   => 'En espera',
+                'estado'              => 'activo',
+                'estado_aprobacion'   => 'Aprobado',
                 'fecha_ingreso'       => now(),
                 'foto_path'           => $fotoPath,
                 'activo'              => 1,
@@ -199,7 +198,7 @@ class SocioController extends Controller
 
             $socio->update([
                 'deleted' => 1,
-                'estado'  => 'Inactivo',
+                'estado'  => 'inactivo',
                 'activo'  => 0,
             ]);
 
@@ -217,7 +216,7 @@ class SocioController extends Controller
 
             $socio->update([
                 'deleted' => 0,
-                'estado'  => 'Activo',
+                'estado'  => 'activo',
                 'activo'  => 1,
             ]);
 

@@ -233,6 +233,17 @@ export default function RegistrarSocio() {
                                     />
                                 </div>
 
+                                <div className="form-group">
+                                    <label className="label-style">Dirección</label>
+                                    <input 
+                                        type="text" 
+                                        value={data.direccion} 
+                                        className="input-style" 
+                                        onChange={e => setData('direccion', e.target.value)} 
+                                    />
+                                    {errors.direccion && <span className="err">{errors.direccion}</span>}
+                                </div>
+
                                 <div className="md:col-span-2 mt-4">
                                     <div className="membresia-sep">
                                         <span>Plan de Membresía</span>

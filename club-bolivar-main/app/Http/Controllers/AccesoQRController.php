@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Services\AccesoSocioService;
 use App\Models\IntentoAccesoFallido;
+use App\Notifications\AccesoRegistradoNotification;
+use App\Models\User;
 
 class AccesoQRController extends Controller
 {
@@ -52,15 +54,25 @@ class AccesoQRController extends Controller
                 return response()->json($bloqueo, 429);
             }
 
-            Acceso::create([
-                'socio_id' => $socio->id,
-                'user_id' => Auth::id() ?? null,
-                'tipo' => $request->tipo,
-                'metodo_verificacion' => 'qr',
-                'resultado_pdi' => 'aprobado',
-                'ip_dispositivo' => $request->ip(),
-                'dispositivo_info' => $request->userAgent(),
+            $acceso = Acceso::create([
+                'socio_id'             => $socio->id,
+                'user_id'              => Auth::id() ?? null,
+                'tipo'                 => $request->tipo,
+                'metodo_verificacion'  => 'qr',
+                'resultado_pdi'        => 'aprobado',
+                'ip_dispositivo'       => $request->ip(),
+                'dispositivo_info'     => $request->userAgent(),
             ]);
+
+            $acceso->load('socio'); // ← agregar esto
+
+            $admins = User::whereHas('role', function ($q) {
+                $q->where('nombre', 'admin');
+            })->get();
+
+            foreach ($admins as $admin) {
+                $admin->notify(new AccesoRegistradoNotification($acceso));
+            }
 
             return response()->json([
                 'estado' => 'exito',
@@ -69,11 +81,13 @@ class AccesoQRController extends Controller
             ]);
 
         } catch (\Exception $e) {
-
             return response()->json([
-                'estado' => 'error',
+                'estado'  => 'error',
                 'mensaje' => 'Error interno',
-                'debug' => $e->getMessage()
+                'debug'   => $e->getMessage(),
+                'line'    => $e->getLine(),
+                'file'    => $e->getFile(),
+                'trace'   => $e->getTraceAsString(),
             ], 500);
         }
     }

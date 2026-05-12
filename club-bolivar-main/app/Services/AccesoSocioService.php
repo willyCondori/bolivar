@@ -22,7 +22,7 @@ class AccesoSocioService
             ];
         }
 
-        if ($socio->estado === 'Bloqueado') {
+        if ($socio->estado === 'bloqueado') {
             return [
                 'estado' => 'fallo',
                 'motivo' => 'Socio bloqueado'

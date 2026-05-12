@@ -39,7 +39,7 @@ class AuthenticatedSessionController extends Controller
 
             $socio = \App\Models\Socio::where('user_id', $user->id)->first();
 
-            if ($socio && in_array($socio->estado, ['Inactivo', 'Bloqueado'])) {
+            if ($socio && in_array($socio->estado, ['inactivo', 'Bloqueado'])) {
 
                 Auth::guard('web')->logout();
 

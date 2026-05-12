@@ -63,6 +63,9 @@ export default function AccessResult({
                     <p className="access-result-name text-danger">
                         Acceso denegado
                     </p>
+                    {reconResult.mensaje && (
+                        <p className="access-result-message">{reconResult.mensaje}</p>
+                    )}
                 </>
             )}
         </div>

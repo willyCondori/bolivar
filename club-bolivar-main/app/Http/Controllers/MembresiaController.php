@@ -44,7 +44,6 @@ class MembresiaController extends Controller
                 'm.estado',
                 'm.fecha_inicio',
                 'm.fecha_fin',
-                'm.monto_pagado',
                 's.id as socio_id',
                 's.nombres',
                 's.apellidos'
@@ -98,7 +97,6 @@ class MembresiaController extends Controller
             'tipo'         => 'required|in:Celeste,Dorado,Platino',
             'fecha_inicio' => 'required|date',
             'fecha_fin'    => 'required|date|after:fecha_inicio',
-            'monto_pagado' => 'nullable|numeric',
         ]);
 
         DB::table('membresias')->insert([
@@ -107,7 +105,6 @@ class MembresiaController extends Controller
             'tipo'         => $request->tipo,
             'fecha_inicio' => $request->fecha_inicio,
             'fecha_fin'    => $request->fecha_fin,
-            'monto_pagado' => $request->monto_pagado,
             'estado'       => 'activo',
             'deleted'      => false,
         ]);

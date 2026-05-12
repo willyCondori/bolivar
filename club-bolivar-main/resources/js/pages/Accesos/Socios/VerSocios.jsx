@@ -141,9 +141,9 @@ export default function SociosIndex({ socios }) {
 
                 {/* Filtros */}
                 <div className="flex gap-3 px-4">
-                    <FiltroBtn estado="Activo" label="Activos" />
-                    <FiltroBtn estado="Inactivo" label="Inactivos" />
-                    <FiltroBtn estado="Bloqueado" label="Bloqueados" />
+                    <FiltroBtn estado="activo" label="Activos" />
+                    <FiltroBtn estado="inactivo" label="Inactivos" />
+                    <FiltroBtn estado="bloqueado" label="Bloqueados" />
                     <FiltroBtn estado="Todos" label="Todos" />
                 </div>
 
@@ -208,11 +208,11 @@ export default function SociosIndex({ socios }) {
                                     <td>
                                             <span
                                                 className={`badge ${
-                                                    s.estado === 'Activo'
+                                                    s.estado === 'activo'
                                                         ? 'badge-active'
-                                                        : s.estado === 'Inactivo'
+                                                        : s.estado === 'inactivo'
                                                         ? 'bg-red-500/20 text-red-300 border border-red-500/40'
-                                                        : s.estado === 'Bloqueado'
+                                                        : s.estado === 'bloqueado'
                                                         ? 'badge-blocked'
                                                         : ''
                                                 }`}
@@ -233,7 +233,7 @@ export default function SociosIndex({ socios }) {
                                             Editar
                                         </Link>
 
-                                        {s.estado === 'Activo' && (
+                                        {s.estado === 'activo' && (
                                             <>
                                                 <button
                                                     onClick={() => handleDelete(s.id)}
@@ -251,7 +251,7 @@ export default function SociosIndex({ socios }) {
                                             </>
                                         )}
 
-                                        {s.estado === 'Inactivo' && (
+                                        {s.estado === 'inactivo' && (
                                             <button
                                                 onClick={() => handleRestore(s.id)}
                                                 className="text-green-400"
@@ -260,7 +260,7 @@ export default function SociosIndex({ socios }) {
                                             </button>
                                         )}
 
-                                        {s.estado === 'Bloqueado' && (
+                                        {s.estado === 'bloqueado' && (
                                             <button
                                                 onClick={() => {
                                                     if (confirm('¿Deseas desbloquear este socio?')) {

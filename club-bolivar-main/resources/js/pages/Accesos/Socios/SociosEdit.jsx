@@ -30,8 +30,8 @@ export default function SociosEdit({ socio }) {
         telefono: socio.telefono || '',
         direccion: socio.direccion || '',
         fecha_nacimiento: socio.fecha_nacimiento || '',
-        tipo_membresia: socio.tipo_membresia || '',
-        estado: socio.estado || 'Activo',
+        tipo_membresia: socio.membresia_activa?.tipo || '',
+        estado: socio.estado || 'activo',
         estado_aprobacion: socio.estado_aprobacion || '',
         observaciones: socio.observaciones || '',
         foto: null,
@@ -168,7 +168,7 @@ export default function SociosEdit({ socio }) {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                             {[
                                 ['tipo_membresia', 'Tipo de Membresía', ['Celeste','Dorado','Platino']],
-                                ['estado',         'Estado Sistema',    ['Activo','Inactivo','Bloqueado']],
+                                ['estado',         'Estado Sistema',    ['activo','inactivo','bloqueado']],
                                 ['estado_aprobacion','Aprobación',      ['Aprobado','En espera','Rechazado']],
                             ].map(([field, lbl, opts]) => (
                                 <Field key={field} label={lbl}>

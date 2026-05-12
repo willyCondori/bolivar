@@ -12,11 +12,9 @@ return new class extends Migration
             $table->uuid('role_id')->nullable();
             $table->string('name');
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->boolean('activo')->default(true);
             $table->boolean('deleted')->default(false);
-            $table->timestamp('last_login_at')->nullable();
             $table->integer('login_attempts')->default(0);
             $table->timestamp('locked_until')->nullable();
             $table->rememberToken();

@@ -23,15 +23,10 @@ class Socio extends Model
         'email',
         'telefono',
         'direccion',
-        // tipo_membresia se mantiene por datos existentes,
-        // pero el tipo real de membresía vive en la tabla membresias.
-        'tipo_membresia',
         'estado',
         'estado_aprobacion',
         'fecha_ingreso',
-        'fecha_vencimiento_membresia',
         'foto_path',
-        'foto_ci_path',
         'observaciones',
         'activo',
         'deleted',
@@ -41,7 +36,6 @@ class Socio extends Model
     protected $casts = [
         'fecha_nacimiento'            => 'date',
         'fecha_ingreso'               => 'date',
-        'fecha_vencimiento_membresia' => 'date',
         'activo'                      => 'boolean',
         'deleted'                     => 'boolean',
     ];

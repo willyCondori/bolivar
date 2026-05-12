@@ -10,6 +10,8 @@ use App\Models\Acceso;
 use Carbon\Carbon;
 use App\Models\IntentoAccesoFallido;
 use App\Services\AccesoSocioService;
+use App\Models\User;
+use App\Notifications\AccesoRegistradoNotification;
 
 class ReconocimientoController extends Controller
 {
@@ -68,7 +70,7 @@ class ReconocimientoController extends Controller
                     ]);
                 }
 
-                // 🔥 VALIDACIÓN SOCIO
+                // VALIDACIÓN SOCIO
                 $validator = new AccesoSocioService();
                 $estado = $validator->validarSocio($socioEncontrado);
 
@@ -102,15 +104,25 @@ class ReconocimientoController extends Controller
                     return response()->json($bloqueo, 429);
                 }
 
-                Acceso::create([
-                    'socio_id' => $socioEncontrado->id,
-                    'tipo' => $request->tipo,
-                    'metodo_verificacion' => 'facial',
-                    'resultado_pdi' => 'aprobado',
-                    'similitud_facial' => 1 - $resultado['distance'],
-                    'ip_dispositivo' => $request->ip(),
-                    'dispositivo_info' => $request->userAgent(),
-                ]);
+            $acceso = Acceso::create([
+                'socio_id'            => $socioEncontrado->id,
+                'tipo'                => $request->tipo,
+                'metodo_verificacion' => 'facial',
+                'resultado_pdi'       => 'aprobado',
+                'similitud_facial'    => 1 - $resultado['distance'],
+                'ip_dispositivo'      => $request->ip(),
+                'dispositivo_info'    => $request->userAgent(),
+            ]);
+
+            $acceso->load('socio');
+
+            $admins = User::whereHas('role', function ($q) {
+                $q->where('nombre', 'admin');
+            })->get();
+
+            foreach ($admins as $admin) {
+                $admin->notify(new AccesoRegistradoNotification($acceso));
+            }
 
                 return response()->json([
                     'estado' => 'exito',

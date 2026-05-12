@@ -3,15 +3,20 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReconocimientoController;
 use App\Http\Controllers\SocioController;
+use App\Http\Controllers\MembresiaController;
+use App\Http\Controllers\BloqueoSocioController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\NotificationController;
+
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
-use App\Http\Controllers\MembresiaController;
 use App\Models\Socio;
-use App\Http\Controllers\BloqueoSocioController;
 
-// --- PÚBLICO ---
+// ===============================
+// 🔹 PÚBLICO
+// ===============================
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin'       => Route::has('login'),
@@ -22,9 +27,12 @@ Route::get('/', function () {
 })->name('home');
 
 
+// ===============================
+// 🔹 AUTH GENERAL
+// ===============================
 Route::middleware(['auth'])->group(function () {
 
-    // Dashboard — todos los roles
+    // DASHBOARD
     Route::get('/dashboard', function () {
         $user = Auth::user();
 
@@ -35,22 +43,24 @@ Route::middleware(['auth'])->group(function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
 
+
     // ===============================
-    // 🔹 SOLO ADMIN Y OPERADOR
+    // ADMIN + OPERADOR
     // ===============================
     Route::middleware(['role:admin,operador'])->group(function () {
 
-        // Accesos
+        // ACCESOS
         Route::prefix('accesos')->group(function () {
-            Route::get('/reconocimiento', fn() =>
+
+            Route::get('/reconocimiento', fn () =>
                 Inertia::render('Accesos/Reconocimiento')
             )->name('reconocimiento.index');
 
-            Route::get('/ingresos/facial', fn() =>
+            Route::get('/ingresos/facial', fn () =>
                 Inertia::render('Accesos/Ingresos/ReconocimientoFacial')
             )->name('accesos.facial');
 
-            Route::get('/ingresos/qr', fn() =>
+            Route::get('/ingresos/qr', fn () =>
                 Inertia::render('Accesos/Ingresos/EscaneoQR')
             )->name('accesos.qr');
 
@@ -61,43 +71,77 @@ Route::middleware(['auth'])->group(function () {
                 ->name('accesos.membresias');
         });
 
-        // Reportes
-        Route::get('/reportes/ingresos', fn() =>
+        // REPORTES
+        Route::get('/reportes/ingresos', fn () =>
             Inertia::render('Accesos/Reportes/ReporteIngresos')
         )->name('reportes.ingresos');
+
+        // NOTIFICACIONES
+        Route::get('/notificaciones', [NotificationController::class, 'index'])
+            ->name('notificacion.index');
     });
 
+
     // ===============================
-    // 🔹 SOLO ADMIN
+    // SOLO ADMIN
     // ===============================
     Route::middleware(['role:admin'])->group(function () {
 
-        // Socios
+        // SOCIOS
         Route::prefix('socios')->group(function () {
-            Route::get('/',               [SocioController::class, 'index'])  ->name('socios.index');
-            Route::get('/registrar',      fn() => Inertia::render('Accesos/Socios/RegistrarSocio'))->name('socios.create');
-            Route::post('/guardar',       [SocioController::class, 'store'])  ->name('socios.store');
-            Route::delete('/{socio}',     [SocioController::class, 'destroy'])->name('socios.destroy');
-            Route::patch('/{socio}/restore', [SocioController::class, 'restore'])->name('socios.restore');
-            Route::get('/{socio}/bloquear',  [BloqueoSocioController::class, 'show'])     ->name('socios.bloquear.show');
-            Route::post('/{socio}/bloquear', [BloqueoSocioController::class, 'execute'])  ->name('socios.bloquear');
-            Route::patch('/{socio}/desbloquear', [BloqueoSocioController::class, 'desbloquear'])->name('socios.desbloquear');
 
-        Route::get('/{socio}/editar', [SocioController::class, 'edit'])
-            ->name('socios.edit');
-        Route::match(['put', 'patch'], '/{socio}', [SocioController::class, 'update'])
-            ->name('socios.update');
-            });
+            Route::get('/', [SocioController::class, 'index'])
+                ->name('socios.index');
 
+            Route::get('/registrar', fn () =>
+                Inertia::render('Accesos/Socios/RegistrarSocio')
+            )->name('socios.create');
+
+            Route::post('/guardar', [SocioController::class, 'store'])
+                ->name('socios.store');
+
+            Route::delete('/{socio}', [SocioController::class, 'destroy'])
+                ->name('socios.destroy');
+
+            Route::patch('/{socio}/restore', [SocioController::class, 'restore'])
+                ->name('socios.restore');
+
+            Route::get('/{socio}/bloquear', [BloqueoSocioController::class, 'show'])
+                ->name('socios.bloquear.show');
+
+            Route::post('/{socio}/bloquear', [BloqueoSocioController::class, 'execute'])
+                ->name('socios.bloquear');
+
+            Route::patch('/{socio}/desbloquear', [BloqueoSocioController::class, 'desbloquear'])
+                ->name('socios.desbloquear');
+
+            Route::get('/{socio}/editar', [SocioController::class, 'edit'])
+                ->name('socios.edit');
+
+            Route::match(['put', 'patch'], '/{socio}', [SocioController::class, 'update'])
+                ->name('socios.update');
+        });
+
+
+        // USUARIOS
+        Route::get('/usuarios/create', [UserController::class, 'create'])
+            ->name('users.create');
+
+        Route::post('/usuarios', [UserController::class, 'store'])
+            ->name('users.store');
     });
 
+
     // ===============================
-    // 🔹 SOLO SOCIO
+    // SOCIO
     // ===============================
     Route::middleware(['role:socio'])->group(function () {
+
         Route::get('/socio/panel', function () {
             $user  = Auth::user();
-            $socio = Socio::with('membresiaActiva')->where('user_id', $user->id)->first();
+            $socio = Socio::with('membresiaActiva')
+                ->where('user_id', $user->id)
+                ->first();
 
             return Inertia::render('Accesos/Socios/Panel', [
                 'user'      => $user,
@@ -107,14 +151,16 @@ Route::middleware(['auth'])->group(function () {
         })->name('socio.panel');
     });
 
+
     // ===============================
-    // 🔹 PERFIL — todos los roles
+    // PERFIL
     // ===============================
     Route::controller(ProfileController::class)->group(function () {
-        Route::get('/profile',    'edit')   ->name('profile.edit');
-        Route::patch('/profile',  'update') ->name('profile.update');
+        Route::get('/profile', 'edit')->name('profile.edit');
+        Route::patch('/profile', 'update')->name('profile.update');
         Route::delete('/profile', 'destroy')->name('profile.destroy');
     });
+
 });
 
 require __DIR__.'/auth.php';

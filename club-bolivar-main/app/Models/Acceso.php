@@ -14,7 +14,6 @@ class Acceso extends Model
         'id',
         'socio_id',
         'user_id',
-        'dispositivo_id',
         'tipo',
         'metodo_verificacion',
         'resultado_pdi',

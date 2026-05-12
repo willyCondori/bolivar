@@ -13,7 +13,7 @@ export default function ReporteIngresos() {
             const res = await fetch(url);
             const json = await res.json();
 
-            // 🔥 UNIFICAR DATOS
+            // UNIFICAR DATOS
             let accesos = (json.accesos || []).map(a => ({
                 fecha: a.created_at,
                 nombre: a.socio
@@ -92,7 +92,7 @@ export default function ReporteIngresos() {
                     </button>
                 </div>
 
-                {/* 📊 TABLA */}
+                {/* TABLA */}
                 <div className="overflow-auto border border-white/10 rounded-xl">
 
                     <table className="w-full text-sm">

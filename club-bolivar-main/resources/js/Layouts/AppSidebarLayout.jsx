@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 
+
 // ─── Estilos ─────────────────────────────────────────────────────────────────
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap');
@@ -129,7 +130,6 @@ nav { padding-top: 1.2rem; display: grid; gap: .45rem; }
   .sidebar.open { transform: translateX(0); }
 }
 `;
-
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const I = {
   dashboard:   <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3zM13 21h8V11h-8zM13 3v6h8V3zM3 21h8v-6H3z"/></svg>,
@@ -155,26 +155,21 @@ const r      = (name) => { try { return route(name); } catch { return '#'; } };
 
 const NAV = {
   admin: () => [
-    { label: 'Dashboard',         href: r('dashboard'),           active: active('dashboard'),            icon: I.dashboard  },
-    { label: 'Registrar Ingresos',href: r('reconocimiento.index'),active: active('reconocimiento.index'), icon: I.registro   },
+    { label: 'Dashboard',         href: r('dashboard'),           active: active('dashboard'),            icon: I.dashboard   },
+    { label: 'Registrar Ingresos',href: r('reconocimiento.index'),active: active('reconocimiento.index'), icon: I.registro    },
     { label: 'Socios',            href: r('socios.index'),         active: active('socios.index'),         icon: I.socios     },
     { label: 'Membresías',        href: r('accesos.membresias'),   active: active('accesos.membresias'),   icon: I.membresias },
     { label: 'Reportes',          href: r('reportes.ingresos'),    active: active('reporte.ingresos'),     icon: I.reportes   },
+    { label: 'Notificaciones',    href: r('notificacion.index'),   active: active('notificacion.index'),   icon: I.alerta     },
+    { label: 'Usuarios',          href: r('usuarios.create'),      active: active('usuarios.create'),      icon: I.perfil     },
   ],
   operador: () => [
     { label: 'Dashboard',         href: r('dashboard'),            active: active('dashboard'),            icon: I.dashboard },
-    { label: 'Validar ingreso',   href: '#',                       active: false,                          icon: I.validar   },
-    { label: 'Accesos del día',   href: '#',                       active: false,                          icon: I.plus      },
-    { label: 'Incidencias',       href: '#',                       active: false,                          icon: I.alerta    },
-    { label: 'Consulta de socio', href: '#',                       active: false,                          icon: I.buscar    },
+    { label: 'Notificaciones',    href: r('notificacion.index'),   active: active('notificacion.index'),   icon: I.alerta    },
     { label: 'Registrar Ingresos',href: r('reconocimiento.index'), active: active('reconocimiento.index'), icon: I.registro  },
   ],
   socio: () => [
     { label: 'Mi panel',            href: r('dashboard'), active: active('dashboard'), icon: I.dashboard  },
-    { label: 'Mi membresía',        href: '#',            active: false,               icon: I.membresias },
-    { label: 'Carnet digital',      href: '#',            active: false,               icon: I.carnet     },
-    { label: 'Historial de accesos',href: '#',            active: false,               icon: I.historial  },
-    { label: 'Mis datos',           href: '#',            active: false,               icon: I.perfil     },
   ],
 };
 
@@ -214,7 +209,6 @@ function useParticles(ref) {
         return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize); };
     }, []);
 }
-
 // ─── Inyector de CSS (una sola vez) ──────────────────────────────────────────
 let injected = false;
 const injectCSS = () => {
@@ -224,7 +218,6 @@ const injectCSS = () => {
     document.head.appendChild(s);
     injected = true;
 };
-
 // ─── Layout ───────────────────────────────────────────────────────────────────
 export default function AppSidebarLayout({ title = 'Panel', children }) {
     const { auth }            = usePage().props;

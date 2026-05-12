@@ -10,7 +10,6 @@ return new class extends Migration
         Schema::table('accesos', function (Blueprint $table) {
             $table->foreign('socio_id')->references('id')->on('socios')->cascadeOnDelete();
             $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
-            $table->foreign('dispositivo_id')->references('id')->on('dispositivos')->nullOnDelete();
         });
     }
 
@@ -19,7 +18,6 @@ return new class extends Migration
         Schema::table('accesos', function (Blueprint $table) {
             $table->dropForeign(['socio_id']);
             $table->dropForeign(['user_id']);
-            $table->dropForeign(['dispositivo_id']);
         });
     }
 };

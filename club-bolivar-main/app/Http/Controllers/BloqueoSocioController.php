@@ -23,7 +23,7 @@ class BloqueoSocioController extends Controller
 
         // 1. Bloquear socio
         $socio->update([
-            'estado'        => 'Bloqueado',
+            'estado'        => 'bloqueado',
             'observaciones' => $request->motivo,
         ]);
 
@@ -52,7 +52,7 @@ class BloqueoSocioController extends Controller
     {
         // 1. Reactivar socio
         $socio->update([
-            'estado'        => 'Activo',
+            'estado'        => 'activo',
             'observaciones' => null,
         ]);
 
