@@ -1,0 +1,42 @@
+.access-grid {
+  display: grid;
+
+  grid-template-columns: 1.1fr .9fr;
+
+  gap: 1.5rem;
+
+  align-items: start;
+}
+
+.access-actions {
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: .75rem;
+
+  margin-top: 1.2rem;
+}
+
+.access-btn {
+  height: 46px;
+
+  padding: 0 1.1rem;
+
+  border-radius: 14px;
+
+  border: 1px solid rgba(255,255,255,.1);
+
+  background: rgba(255,255,255,.04);
+
+  color: rgba(224,224,255,.8);
+
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+@media (max-width: 1024px) {
+  .access-grid {
+    grid-template-columns: 1fr;
+  }
+}

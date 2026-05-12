@@ -34,3 +34,10 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
+
+ssl/
+.caddy.env
+
+caddy.exe
+ssl/
+.caddy.env

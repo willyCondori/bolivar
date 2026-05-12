@@ -9,7 +9,6 @@ return new class extends Migration
     {
         Schema::table('intentos_acceso_fallidos', function (Blueprint $table) {
             $table->foreign('socio_id')->references('id')->on('socios')->nullOnDelete();
-            $table->foreign('dispositivo_id')->references('id')->on('dispositivos')->nullOnDelete();
         });
     }
 
@@ -17,7 +16,6 @@ return new class extends Migration
     {
         Schema::table('intentos_acceso_fallidos', function (Blueprint $table) {
             $table->dropForeign(['socio_id']);
-            $table->dropForeign(['dispositivo_id']);
         });
     }
 };

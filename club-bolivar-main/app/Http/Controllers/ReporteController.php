@@ -11,40 +11,31 @@ class ReporteController extends Controller
     public function ingresos(Request $request)
     {
         try {
-
             $fecha = $request->fecha;
-            $tipo = $request->tipo;
+            $tipo  = $request->tipo;
 
-            $query = Acceso::query()
-                ->leftJoin('socios', 'accesos.socio_id', '=', 'socios.id')
-                ->select(
-                    'accesos.created_at as fecha',
-                    'socios.nombres',
-                    'socios.apellidos',
-                    'accesos.tipo',
-                    DB::raw("'correcto' as estado")
-                );
+            $query = Acceso::with('socio')
+                ->select('id', 'socio_id', 'tipo', 'metodo_verificacion', 'created_at');
 
             if ($fecha) {
-                $query->whereDate('accesos.created_at', $fecha);
+                $query->whereDate('created_at', $fecha);
             }
 
-            if ($tipo && $tipo !== 'todos') {
-                $query->where('accesos.tipo', $tipo);
+            if ($tipo && $tipo !== 'todos' && $tipo !== 'fallido') {
+                $query->where('tipo', $tipo);
             }
 
-            $accesos = $query->get();
+            $accesos = $query->orderByDesc('created_at')->get();
 
             return response()->json([
-                'accesos' => $accesos,
-                'fallidos' => [] // luego puedes integrar
+                'accesos'  => $accesos,
+                'fallidos' => [],
             ]);
 
         } catch (\Exception $e) {
-
             return response()->json([
-                'error' => true,
-                'mensaje' => $e->getMessage()
+                'error'   => true,
+                'mensaje' => $e->getMessage(),
             ], 500);
         }
     }

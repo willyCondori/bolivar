@@ -58,6 +58,10 @@ export default function SociosIndex({ socios }) {
                     content: ''; position: absolute; inset: 0;
                     background: linear-gradient(135deg, rgba(28,224,235,.05), transparent 45%);
                 }
+                .glass-card > * {
+                    position: relative;
+                    z-index: 1;
+                }
                 .table-header-title {
                     margin-bottom: 1.5rem; font-size: 1.8rem; font-weight: 800; color: #fff;
                 }
@@ -90,6 +94,27 @@ export default function SociosIndex({ socios }) {
                     background: rgba(28,224,235,.15);
                     color: #1CE0EB;
                 }
+                .badge {
+                    padding: 0.45rem 0.9rem;
+                    border-radius: 12px;
+                    font-size: 0.72rem;
+                    font-weight: 800;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    min-width: 90px;
+                    text-align: center;
+                }
+                .badge-active {
+                    background: rgba(28,224,235,.15);
+                    color: #1CE0EB;
+                }
+                .badge-blocked {
+                    background: linear-gradient(135deg, #ff4b2b, #ff416c) !important;
+                    color: white !important;
+                    border: none !important;
+                    box-shadow: 0 4px 15px rgba(255, 75, 43, 0.3);
+                }
                 .text-main { color: #fff; font-weight: 600; }
                 .text-sub { color: rgba(224,247,248,.45); font-size: 0.85rem; }
                 .btn-add {
@@ -116,8 +141,9 @@ export default function SociosIndex({ socios }) {
 
                 {/* Filtros */}
                 <div className="flex gap-3 px-4">
-                    <FiltroBtn estado="Activo" label="Activos" />
-                    <FiltroBtn estado="Inactivo" label="Inactivos" />
+                    <FiltroBtn estado="activo" label="Activos" />
+                    <FiltroBtn estado="inactivo" label="Inactivos" />
+                    <FiltroBtn estado="bloqueado" label="Bloqueados" />
                     <FiltroBtn estado="Todos" label="Todos" />
                 </div>
 
@@ -152,8 +178,10 @@ export default function SociosIndex({ socios }) {
                                 <tr key={s.id} className="table-row">
                                     <td>
                                         <img
-                                            src={s.foto_path ? `/storage/${s.foto_path}` : '/img/default-avatar.png'}
+                                            src={`/storage/${s.foto_path}`}
                                             className="socio-avatar"
+                                            alt={s.nombres}
+                                            onError={(e) => { e.target.src = '/img/default-avatar.png'; }}
                                         />
                                     </td>
 
@@ -166,15 +194,31 @@ export default function SociosIndex({ socios }) {
                                     <td className="text-main">{s.telefono}</td>
 
                                     <td>
-                                        <div className="text-main text-[#1CE0EB]">{s.tipo_membresia}</div>
+                                        {s.membresia_activa ? (
+                                            <div className="text-main text-[#1CE0EB] font-bold">
+                                                {s.membresia_activa.tipo}
+                                            </div>
+                                        ) : (
+                                            <span className="text-xs text-gray-400">
+                                                Sin membresía
+                                            </span>
+                                        )}
                                     </td>
 
                                     <td>
-                                        <span className={`badge ${s.estado === 'Activo'
-                                            ? 'badge-active'
-                                            : 'bg-red-500/20 text-red-300'}`}>
-                                            {s.estado}
-                                        </span>
+                                            <span
+                                                className={`badge ${
+                                                    s.estado === 'activo'
+                                                        ? 'badge-active'
+                                                        : s.estado === 'inactivo'
+                                                        ? 'bg-red-500/20 text-red-300 border border-red-500/40'
+                                                        : s.estado === 'bloqueado'
+                                                        ? 'badge-blocked'
+                                                        : ''
+                                                }`}
+                                            >
+                                                {s.estado}
+                                            </span>
                                     </td>
 
                                     <td className="text-main">
@@ -189,13 +233,43 @@ export default function SociosIndex({ socios }) {
                                             Editar
                                         </Link>
 
-                                        {s.estado === 'Activo' ? (
-                                            <button onClick={() => handleDelete(s.id)} className="text-red-400">
-                                                Eliminar
-                                            </button>
-                                        ) : (
-                                            <button onClick={() => handleRestore(s.id)} className="text-green-400">
+                                        {s.estado === 'activo' && (
+                                            <>
+                                                <button
+                                                    onClick={() => handleDelete(s.id)}
+                                                    className="text-red-400 mr-3"
+                                                >
+                                                    Eliminar
+                                                </button>
+
+                                                <Link
+                                                    href={route('socios.bloquear.show', s.id)}
+                                                    className="text-yellow-400"
+                                                >
+                                                    Bloquear
+                                                </Link>
+                                            </>
+                                        )}
+
+                                        {s.estado === 'inactivo' && (
+                                            <button
+                                                onClick={() => handleRestore(s.id)}
+                                                className="text-green-400"
+                                            >
                                                 Recuperar
+                                            </button>
+                                        )}
+
+                                        {s.estado === 'bloqueado' && (
+                                            <button
+                                                onClick={() => {
+                                                    if (confirm('¿Deseas desbloquear este socio?')) {
+                                                        router.patch(route('socios.desbloquear', s.id));
+                                                    }
+                                                }}
+                                                className="text-cyan-400"
+                                            >
+                                                Desbloquear
                                             </button>
                                         )}
                                     </td>

@@ -11,8 +11,12 @@ export default function RegistrarSocio() {
     const hoy = new Date();
     // Fecha máxima permitida (hace 18 años): No pueden ser menores de 18
     const fechaMax = new Date(hoy.getFullYear() - 18, hoy.getMonth(), hoy.getDate()).toISOString().split("T")[0]; 
-    // Fecha mínima permitida (hace 90 años): No pueden ser mayores de 90
-    const fechaMin = new Date(hoy.getFullYear() - 90, hoy.getMonth(), hoy.getDate()).toISOString().split("T")[0];
+    // Fecha mínima permitida (hace 80 años)
+    const fechaMin = new Date(
+        hoy.getFullYear() - 80,
+        hoy.getMonth(),
+        hoy.getDate()
+    ).toISOString().split("T")[0];
 
     const { data, setData, post, processing, errors, setError, clearErrors } = useForm({
         nombres: '',
@@ -63,6 +67,7 @@ export default function RegistrarSocio() {
             setError('password_confirmation', 'Las contraseñas no coinciden.');
             return;
         }
+
 
         // 2. Validar edad (18 - 90 años)
         if (data.fecha_nacimiento) {
@@ -161,30 +166,60 @@ export default function RegistrarSocio() {
                                 </div>
 
                                 <div className="form-group">
-                                    <label className="label-style">Fecha Nacimiento (18-90 años)</label>
-                                    <input 
-                                        type="date" 
-                                        value={data.fecha_nacimiento} 
+                                    <label className="label-style">
+                                        Fecha Nacimiento (18-80 años)
+                                    </label>
+
+                                    <input
+                                        type="date"
+                                        value={data.fecha_nacimiento}
                                         min={fechaMin}
                                         max={fechaMax}
-                                        className={`input-style ${errors.fecha_nacimiento ? 'border-red-500' : ''}`} 
-                                        onChange={e => {
+                                        className={`input-style ${
+                                            errors.fecha_nacimiento ? 'border-red-500' : ''
+                                        }`}
+                                        onChange={(e) => {
                                             const val = e.target.value;
-                                            const anioIntroducido = new Date(val).getFullYear();
-                                            const anioMaximo = new Date(fechaMax).getFullYear();
 
-                                            // Si el usuario intenta escribir un año mayor al permitido (ej. 5555)
-                                            if (anioIntroducido > anioMaximo) {
-                                                // Opcional: Podrías resetearlo a la fecha máxima o dejarlo vacío
-                                                setData('fecha_nacimiento', fechaMax); 
-                                                setError('fecha_nacimiento', 'El año no es válido.');
-                                            } else {
-                                                setData('fecha_nacimiento', val);
-                                                if (errors.fecha_nacimiento) clearErrors('fecha_nacimiento');
+                                            setData('fecha_nacimiento', val);
+
+                                            // 👇 solo validar cuando la fecha esté completa
+                                            if (!val || val.length !== 10) {
+                                                clearErrors('fecha_nacimiento');
+                                                return;
                                             }
-                                        }} 
+
+                                            const [year, month, day] = val.split('-').map(Number);
+
+                                            const fecha = new Date(year, month - 1, day);
+
+                                            if (isNaN(fecha.getTime())) {
+                                                setError('fecha_nacimiento', 'Fecha inválida.');
+                                                return;
+                                            }
+
+                                            let edad = hoy.getFullYear() - fecha.getFullYear();
+
+                                            const mes = hoy.getMonth() - fecha.getMonth();
+
+                                            if (mes < 0 || (mes === 0 && hoy.getDate() < fecha.getDate())) {
+                                                edad--;
+                                            }
+
+                                            if (edad < 18 || edad > 80) {
+                                                setError('fecha_nacimiento', 'Debe tener entre 18 y 80 años.');
+                                                return;
+                                            }
+
+                                            clearErrors('fecha_nacimiento');
+                                        }}
                                     />
-                                    {errors.fecha_nacimiento && <span className="err">{errors.fecha_nacimiento}</span>}
+
+                                    {errors.fecha_nacimiento && (
+                                        <span className="err">
+                                            {errors.fecha_nacimiento}
+                                        </span>
+                                    )}
                                 </div>
 
                                 <div className="form-group">
@@ -196,6 +231,17 @@ export default function RegistrarSocio() {
                                         className="input-style" 
                                         onChange={e => setData('telefono', e.target.value.replace(/\D/g, ''))} 
                                     />
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="label-style">Dirección</label>
+                                    <input 
+                                        type="text" 
+                                        value={data.direccion} 
+                                        className="input-style" 
+                                        onChange={e => setData('direccion', e.target.value)} 
+                                    />
+                                    {errors.direccion && <span className="err">{errors.direccion}</span>}
                                 </div>
 
                                 <div className="md:col-span-2 mt-4">

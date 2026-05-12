@@ -1,0 +1,36 @@
+.tabla-contenedor {
+  overflow-x: auto;
+
+  border-radius: var(--radio-md);
+
+  border: 1px solid var(--borde);
+}
+
+.tabla {
+  width: 100%;
+
+  border-collapse: collapse;
+
+  font-size: .82rem;
+}
+
+.tabla thead th {
+  background: var(--bg-superficie2);
+
+  color: var(--texto-muted);
+
+  padding: .75rem 1rem;
+
+  text-align: left;
+
+  font-size: .72rem;
+  font-weight: 600;
+
+  text-transform: uppercase;
+
+  border-bottom: 1px solid var(--borde);
+}
+
+.tabla tbody td {
+  padding: .7rem 1rem;
+}

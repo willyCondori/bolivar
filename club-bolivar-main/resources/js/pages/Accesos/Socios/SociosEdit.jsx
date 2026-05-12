@@ -5,9 +5,6 @@ import Webcam from 'react-webcam';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const hoy = new Date();
-const dateLimit = (yearsAgo) =>
-    new Date(hoy.getFullYear() - yearsAgo, hoy.getMonth(), hoy.getDate())
-        .toISOString().split('T')[0];
 
 const Field = ({ label, error, children }) => (
     <div>
@@ -25,27 +22,21 @@ export default function SociosEdit({ socio }) {
     const fileRef  = useRef();
     const webcamRef = useRef();
 
-    const { data, setData, post, errors, processing, setError, clearErrors } = useForm({
-        nombres: socio.nombres || '', apellidos: socio.apellidos || '',
-        ci: socio.ci || '', email: socio.email || '',
-        telefono: socio.telefono || '', direccion: socio.direccion || '',
+    const { data, setData, post, errors, processing } = useForm({
+        nombres: socio.nombres || '',
+        apellidos: socio.apellidos || '',
+        ci: socio.ci || '',
+        email: socio.email || '',
+        telefono: socio.telefono || '',
+        direccion: socio.direccion || '',
         fecha_nacimiento: socio.fecha_nacimiento || '',
-        tipo_membresia: socio.tipo_membresia || 'Bronce',
-        estado: socio.estado || 'Activo',
-        estado_aprobacion: socio.estado_aprobacion || 'En espera',
+        tipo_membresia: socio.membresia_activa?.tipo || '',
+        estado: socio.estado || 'activo',
+        estado_aprobacion: socio.estado_aprobacion || '',
         observaciones: socio.observaciones || '',
-        foto: null, _method: 'PUT',
+        foto: null,
+        _method: 'PATCH',
     });
-
-    const validateAge = (fecha) => {
-        if (!fecha) return;
-        const d = new Date(fecha);
-        let age = hoy.getFullYear() - d.getFullYear();
-        if (hoy.getMonth() < d.getMonth() || (hoy.getMonth() === d.getMonth() && hoy.getDate() < d.getDate())) age--;
-        age < 18 || age > 90
-            ? setError('fecha_nacimiento', `Edad no permitida: ${age} años (debe estar entre 18 y 90).`)
-            : clearErrors('fecha_nacimiento');
-    };
 
     const handleFile = (e) => {
         const file = e.target.files[0];
@@ -57,16 +48,27 @@ export default function SociosEdit({ socio }) {
 
     const capture = useCallback(() => {
         const src = webcamRef.current.getScreenshot();
-        setPreview(src); setData('foto', src);
-        setCamera(false); setShowOpts(false);
-    }, [webcamRef, setData]);
+
+        setPreview(src);
+
+        // ❌ NO enviar base64 como string si backend espera file
+        fetch(src)
+            .then(res => res.blob())
+            .then(blob => {
+                const file = new File([blob], "foto.jpg", { type: "image/jpeg" });
+                setData('foto', file);
+            });
+
+        setCamera(false);
+        setShowOpts(false);
+    }, []);
 
     const submit = (e) => {
         e.preventDefault();
-        const d = new Date(data.fecha_nacimiento);
-        let age = hoy.getFullYear() - d.getFullYear();
-        if (age < 18 || age > 90) return alert('La edad debe estar entre 18 y 90 años.');
-        post(route('socios.update', socio.id));
+
+        post(route('socios.update', socio.id), {
+            forceFormData: true, // 🔥 ESTE ES EL FIX REAL
+        });
     };
 
     return (
@@ -76,6 +78,7 @@ export default function SociosEdit({ socio }) {
                 .glass-form-card { background:linear-gradient(180deg,rgba(10,20,35,.82),rgba(5,11,22,.92)); backdrop-filter:blur(18px); border-radius:28px; border:1px solid rgba(255,255,255,.07); padding:2.5rem; max-width:900px; margin:0 auto; position:relative; }
                 .form-input { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:12px; color:#fff; padding:.8rem 1rem; width:100%; transition:all .2s; }
                 .form-input:focus { border-color:#1CE0EB; outline:none; background:rgba(255,255,255,.08); }
+                .form-input:disabled { opacity: 0.6; cursor: not-allowed; background:rgba(255,255,255,0.02); }
                 .photo-perfil-container { width:160px; height:160px; border-radius:50%; border:4px solid #1CE0EB; box-shadow:0 0 20px rgba(28,224,235,.2); overflow:hidden; margin:0 auto 2rem; position:relative; background:#050b16; cursor:pointer; transition:transform .2s; }
                 .photo-perfil-container:hover { transform:scale(1.03); }
                 .photo-perfil-container img { width:100%; height:100%; object-fit:cover; }
@@ -137,10 +140,13 @@ export default function SociosEdit({ socio }) {
                             <Field label="C.I. (Solo números)" error={errors.ci}>
                                 <input className="form-input" maxLength={8} value={data.ci} onChange={e => setData('ci', e.target.value.replace(/\D/g, ''))} />
                             </Field>
-                            <Field label="Fecha de Nacimiento" error={errors.fecha_nacimiento}>
-                                <input type="date" className="form-input" min={dateLimit(90)} max={dateLimit(18)}
-                                    value={data.fecha_nacimiento}
-                                    onChange={e => { setData('fecha_nacimiento', e.target.value); validateAge(e.target.value); }} />
+                            {/* Fecha de Nacimiento - Formateada y solo lectura */}
+                            <Field label="Fecha de Nacimiento (No editable)">
+                                <input 
+                                    className="form-input" 
+                                    value={data.fecha_nacimiento ? data.fecha_nacimiento.split('T')[0] : ''} 
+                                    disabled 
+                                />
                             </Field>
                         </div>
 
@@ -162,7 +168,7 @@ export default function SociosEdit({ socio }) {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                             {[
                                 ['tipo_membresia', 'Tipo de Membresía', ['Celeste','Dorado','Platino']],
-                                ['estado',         'Estado Sistema',    ['Activo','Inactivo','Bloqueado']],
+                                ['estado',         'Estado Sistema',    ['activo','inactivo','bloqueado']],
                                 ['estado_aprobacion','Aprobación',      ['Aprobado','En espera','Rechazado']],
                             ].map(([field, lbl, opts]) => (
                                 <Field key={field} label={lbl}>
@@ -174,7 +180,7 @@ export default function SociosEdit({ socio }) {
                         </div>
 
                         <div className="flex justify-end pt-6 border-t border-white/10 mt-12">
-                            <button type="submit" className="btn-cyan" disabled={processing || errors.fecha_nacimiento}>
+                            <button type="submit" className="btn-cyan" disabled={processing}>
                                 {processing ? 'Procesando...' : 'Guardar Cambios'}
                             </button>
                         </div>

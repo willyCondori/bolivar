@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use App\Traits\Auditable;
+use App\Models\Membresia;
 
 class Socio extends Model
 {
@@ -22,15 +23,10 @@ class Socio extends Model
         'email',
         'telefono',
         'direccion',
-        // tipo_membresia se mantiene por datos existentes,
-        // pero el tipo real de membresía vive en la tabla membresias.
-        'tipo_membresia',
         'estado',
         'estado_aprobacion',
         'fecha_ingreso',
-        'fecha_vencimiento_membresia',
         'foto_path',
-        'foto_ci_path',
         'observaciones',
         'activo',
         'deleted',
@@ -40,7 +36,6 @@ class Socio extends Model
     protected $casts = [
         'fecha_nacimiento'            => 'date',
         'fecha_ingreso'               => 'date',
-        'fecha_vencimiento_membresia' => 'date',
         'activo'                      => 'boolean',
         'deleted'                     => 'boolean',
     ];
@@ -74,7 +69,9 @@ class Socio extends Model
     /** La membresía activa y vigente más reciente */
     public function membresiaActiva()
     {
-        return $this->hasOne(Membresia::class, 'socio_id')
-            ->latest('fecha_inicio');
+        return $this->hasOne(Membresia::class)
+        ->where('estado', 'activo')
+        ->where('deleted', false)
+        ->latest('fecha_inicio');
     }
 }

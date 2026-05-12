@@ -1,0 +1,23 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg-base) !important;
+  color: var(--texto-primario) !important;
+  font-family: 'Inter', system-ui, sans-serif;
+  transition: var(--transicion);
+}
+
+a {
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}

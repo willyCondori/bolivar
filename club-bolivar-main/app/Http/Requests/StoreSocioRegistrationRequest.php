@@ -48,7 +48,6 @@ class StoreSocioRegistrationRequest extends FormRequest
             ],
             'telefono' => ['required', 'regex:/^[0-9]{7,15}$/'],
             'direccion' => ['nullable', 'string', 'max:255'],
-            'tipo_membresia' => ['nullable', Rule::in(['regular', 'vip', 'familiar'])],
             'observaciones' => ['nullable', 'string', 'max:1000'],
             'fotografia' => [
                 'required',

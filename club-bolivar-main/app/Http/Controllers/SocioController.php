@@ -12,29 +12,29 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use App\Models\Role;
+use Illuminate\Support\Facades\Http;  // ← AGREGAR
+use Illuminate\Support\Facades\Log;   // ← AGREGAR
 
 class SocioController extends Controller
 {
     public function index(Request $request)
     {
-        $estado = $request->get('estado', 'activo');
+        $estado = $request->get('estado', 'Activo');
 
-        $query = Socio::query()->with(['membresiaActiva']);
+        $query = Socio::with('membresiaActiva');
 
         if ($estado === 'activo') {
-            $query->where('estado', 'Activo')->where('deleted', 0);
-        }
-
-        if ($estado === 'inactivo') {
-            $query->where('estado', 'Inactivo');
-        }
-
-        if ($estado === 'todos') {
+            $query->where('estado', 'activo')->where('deleted', 0);
+        } elseif ($estado === 'inactivo') {
+            $query->where('estado', 'inactivo');
+        } elseif ($estado === 'bloqueado') {
+            $query->where('estado', 'bloqueado');
+        } elseif ($estado === 'Todos') {
             $query->where('deleted', 0);
         }
 
         return Inertia::render('Accesos/Socios/VerSocios', [
-            'socios' => $query->get(),
+            'socios'      => $query->get(),
             'filtroEstado' => $estado,
         ]);
     }
@@ -48,7 +48,6 @@ class SocioController extends Controller
             'telefono'       => ['required', 'digits:8', 'regex:/^[67][0-9]{7}$/'],
             'email'          => 'required|email|unique:users,email',
             'password'       => 'required|min:6|confirmed',
-            'tipo_membresia' => 'required|in:Celeste,Dorado,Platino',
             'foto'           => 'required|string',
         ]);
 
@@ -58,10 +57,12 @@ class SocioController extends Controller
             return response()->json(['error' => "Rol 'socio' no existe"], 500);
         }
 
-        // 🔥 mover fuera de transacción (IMPORTANTE)
+        // Subir foto ANTES de la transacción (operación I/O fuera de TX)
         $fotoPath = $this->uploadBase64($request->foto);
 
-        DB::transaction(function () use ($request, $fotoPath, $roleId) {
+        $socio = null; // ← para usarlo fuera de la transacción
+
+        DB::transaction(function () use ($request, $fotoPath, $roleId, &$socio) {
 
             $user = User::create([
                 'id'       => (string) Str::uuid(),
@@ -73,25 +74,24 @@ class SocioController extends Controller
             ]);
 
             $socio = Socio::create([
-                'id'               => (string) Str::uuid(),
-                'numero_socio'    => 'SOC-' . strtoupper(Str::random(6)),
-                'nombres'         => $request->nombres,
-                'apellidos'       => $request->apellidos,
-                'ci'              => $request->ci,
-                'fecha_nacimiento'=> $request->fecha_nacimiento,
-                'telefono'        => $request->telefono,
-                'direccion'       => $request->direccion,
-                'estado'          => 'Activo',
-                'estado_aprobacion' => 'En espera',
-                'fecha_ingreso'   => now(),
-                'foto_path'       => $fotoPath,
-                'activo'          => 1,
-                'deleted'         => 0,
-                'email'           => $request->email,
-                'user_id'         => $user->id,
-                'qr_token'        => (string) Str::uuid(),
-                'tipo_membresia'   => 'Bronce',
-
+                'id'                  => (string) Str::uuid(),
+                'numero_socio'        => 'SOC-' . strtoupper(Str::random(6)),
+                'nombres'             => $request->nombres,
+                'apellidos'           => $request->apellidos,
+                'ci'                  => $request->ci,
+                'fecha_nacimiento'    => $request->fecha_nacimiento,
+                'telefono'            => $request->telefono,
+                'direccion'           => $request->direccion,
+                'estado'              => 'activo',
+                'estado_aprobacion'   => 'Aprobado',
+                'fecha_ingreso'       => now(),
+                'foto_path'           => $fotoPath,
+                'activo'              => 1,
+                'deleted'             => 0,
+                'email'               => $request->email,
+                'user_id'             => $user->id,
+                'qr_token'            => (string) Str::uuid(),
+                'tipo_membresia'      => 'Bronce',
             ]);
 
             Membresia::create([
@@ -104,6 +104,11 @@ class SocioController extends Controller
                 'deleted'      => false,
             ]);
         });
+
+        // ✅ Generar embedding DESPUÉS de confirmar la transacción
+        if ($socio) {
+            $this->generarEmbedding($socio->id, $fotoPath);
+        }
 
         return redirect()->route('socios.index');
     }
@@ -120,43 +125,67 @@ class SocioController extends Controller
     public function update(Request $request, Socio $socio)
     {
         $validated = $request->validate([
-            'nombres'   => 'required|string|max:255',
-            'apellidos' => 'required|string|max:255',
-            'ci'        => 'required|unique:socios,ci,' . $socio->id,
-            'email'     => 'nullable|email',
-            'estado'    => 'required',
-            'foto'      => 'nullable',
+            'nombres'        => 'required|string|max:255',
+            'apellidos'      => 'required|string|max:255',
+            'ci'             => 'required|unique:socios,ci,' . $socio->id,
+            'email'          => 'nullable|email',
+            'estado'         => 'required',
+            'foto'           => 'nullable',
+            'tipo_membresia' => 'nullable|in:Bronce,Plata,Oro',
         ]);
 
+        $fotoActualizada = null;
+
+        // ✅ CASO 1: foto en base64 (viene del webcam/cropper)
         if ($request->filled('foto') && str_contains($request->foto, 'data:image')) {
 
             if ($socio->foto_path) {
                 Storage::disk('public')->delete($socio->foto_path);
             }
 
-            $validated['foto_path'] = $this->uploadBase64($request->foto);
+            $fotoActualizada = $this->uploadBase64($request->foto);
+            $validated['foto_path'] = $fotoActualizada;
         }
+
+        // ✅ CASO 2: foto como archivo normal (file input)
+        if ($request->hasFile('foto')) {
+
+            if ($socio->foto_path) {
+                Storage::disk('public')->delete($socio->foto_path);
+            }
+
+            $fotoActualizada = $request->file('foto')->store('fotos_socios', 'public');
+            $validated['foto_path'] = $fotoActualizada;
+        }
+
+        // Remover 'foto' del array validado (no es columna de DB)
+        unset($validated['foto']);
 
         $socio->update($validated);
 
-        if ($request->filled('tipo_membresia')) {
+        // ✅ Membresía: solo si se envía explícitamente un plan nuevo
+        if ($request->filled('membresia_plan')) {
 
             $membresia = $socio->membresiaActiva;
 
             if ($membresia) {
-                $membresia->update(['tipo' => $request->tipo_membresia]);
+                $membresia->update(['tipo' => $request->membresia_plan]);
             } else {
                 Membresia::create([
                     'id'           => (string) Str::uuid(),
                     'socio_id'     => $socio->id,
-                    'tipo'         => $request->tipo_membresia,
+                    'tipo'         => $request->membresia_plan,
                     'fecha_inicio' => now()->toDateString(),
                     'fecha_fin'    => now()->addMonth()->toDateString(),
                     'estado'       => 'activo',
-                    'tipo_membresia' => 'Bronce',
                     'deleted'      => false,
                 ]);
             }
+        }
+
+        // ✅ Regenerar embedding si la foto cambió
+        if ($fotoActualizada) {
+            $this->generarEmbedding($socio->id, $fotoActualizada);
         }
 
         return redirect()->route('socios.index')
@@ -169,13 +198,13 @@ class SocioController extends Controller
 
             $socio->update([
                 'deleted' => 1,
-                'estado'  => 'Inactivo',
+                'estado'  => 'inactivo',
                 'activo'  => 0,
             ]);
 
             $socio->membresias()
                 ->where('estado', 'activo')
-                ->update(['estado' => 'cancelado']);
+                ->update(['estado' => 'inactivo']);
         });
 
         return redirect()->route('socios.index');
@@ -187,7 +216,7 @@ class SocioController extends Controller
 
             $socio->update([
                 'deleted' => 0,
-                'estado'  => 'Activo',
+                'estado'  => 'activo',
                 'activo'  => 1,
             ]);
 
@@ -211,20 +240,41 @@ class SocioController extends Controller
         return redirect()->route('socios.index');
     }
 
-    /* ── HELPERS ───────────────────────────── */
+    /* ── HELPERS ─────────────────────────────────────────── */
 
-    private function uploadBase64($base64String)
+    private function uploadBase64(string $base64String): string
     {
-        $img = preg_replace('/^data:image\/\w+;base64,/', '', $base64String);
-        $img = str_replace(' ', '+', $img);
-
+        $img      = preg_replace('/^data:image\/\w+;base64,/', '', $base64String);
+        $img      = str_replace(' ', '+', $img);
         $fileName = 'socio_' . time() . '_' . Str::random(5) . '.jpg';
 
-        Storage::disk('public')->put(
-            'fotos_socios/' . $fileName,
-            base64_decode($img)
-        );
+        Storage::disk('public')->put('fotos_socios/' . $fileName, base64_decode($img));
 
         return 'fotos_socios/' . $fileName;
+    }
+
+    /**
+     * Llama al microservicio FastAPI para generar y guardar el embedding.
+     * No bloquea ni lanza excepción si falla.
+     */
+    private function generarEmbedding(string $socioId, string $fotoPath): void
+    {
+        try {
+            $url = rtrim(config('services.fastapi.url'), '/');
+
+            $response = Http::timeout(30)->post("{$url}/generar-embedding/{$socioId}", [
+                'foto_path' => $fotoPath,
+            ]);
+
+            if (!$response->successful() || !($response->json('success') ?? false)) {
+                Log::warning("Embedding no generado para socio {$socioId}", [
+                    'respuesta' => $response->json(),
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            // No romper el flujo principal si FastAPI no está disponible
+            Log::error("Error al generar embedding para socio {$socioId}: " . $e->getMessage());
+        }
     }
 }

@@ -14,7 +14,6 @@ class Acceso extends Model
         'id',
         'socio_id',
         'user_id',
-        'dispositivo_id',
         'tipo',
         'metodo_verificacion',
         'resultado_pdi',
@@ -38,6 +37,6 @@ class Acceso extends Model
 
     public function socio()
     {
-        return $this->belongsTo(Socio::class);
+        return $this->belongsTo(Socio::class, 'socio_id');
     }
 }

@@ -13,8 +13,6 @@ class IntentoAccesoFallido extends Model
     protected $fillable = [
         'id',
         'socio_id',
-        'dispositivo_id',
-        'foto_captura_path',
         'similitud_facial',
         'ip_dispositivo',
         'motivo_rechazo'

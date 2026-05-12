@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSocioRegistrationRequest;
@@ -39,9 +39,7 @@ class SocioRegistrationController extends Controller
                     'estado' => 'inactivo',
                     'estado_aprobacion' => 'pendiente',
                     'fecha_ingreso' => now()->toDateString(),
-                    'fecha_vencimiento_membresia' => null,
                     'foto_path' => $photoPath,
-                    'foto_ci_path' => null,
                     'observaciones' => $request->observaciones,
                     'activo' => true,
                     'deleted' => false,
@@ -58,7 +56,6 @@ class SocioRegistrationController extends Controller
                     'ci' => $socio->ci,
                     'email' => $socio->email,
                     'telefono' => $socio->telefono,
-                    'tipo_membresia' => $socio->tipo_membresia,
                     'estado_aprobacion' => $socio->estado_aprobacion,
                     'foto_path' => $socio->foto_path,
                 ],

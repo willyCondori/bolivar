@@ -3,20 +3,20 @@ import AppSidebarLayout from '@/Layouts/AppSidebarLayout';
 
 // ── datos por rol ─────────────────────────────────────────────────────────────
 const ROLES = {
-    Administrador: {
+    admin: {
         title: ['Panel de', 'Administración General'],
         text: 'Desde aquí el administrador podrá gestionar socios, membresías, accesos, reportes, bloqueos y configuración general del sistema.',
         stats: [
             { num:'Socios',   label:'Gestión completa',      cta:'Registrar nuevo socio →', href:'socios.create' },
             { num:'Accesos',  label:'Control y seguimiento',  cta:'Reconocimiento facial →', href:'reconocimiento.index' },
-            { num:'Reportes', label:'Ingresos del sistema',   cta:'Ver reporte de ingresos →', href:'reportes.ingresos' },
+            { num:'Reportes', label:'Ingresos del accesos',   cta:'Ver reporte de accesos →', href:'reportes.ingresos' },
         ],
         actions: [
             { title:'Lo que hará este rol',  text:'Ver todos los módulos, aprobar procesos, supervisar operaciones y administrar la configuración general.' },
             { title:'Próximos módulos',      text:'Registro de socios, gestión de membresías, reportes, bloqueos y seguridad.' },
         ],
     },
-    Operador: {
+    operador: {
         title: ['Panel de', 'Operación de Accesos'],
         text: 'Valida ingresos mediante reconocimiento facial o código QR, revisa incidencias y realiza consultas rápidas del socio.',
         stats: [
@@ -29,7 +29,7 @@ const ROLES = {
             { title:'Enfoque del operador', text:'Interfaz simple, rápida y enfocada en la operación del estadio.' },
         ],
     },
-    Socio: {
+    socio: {
         title: ['Bienvenido a', 'Tu Panel de Socio'],
         text: 'Desde aquí podrás revisar tu membresía, descargar tu carnet digital, actualizar tus datos personales y consultar tu historial de accesos.',
         stats: [
@@ -61,7 +61,7 @@ const Stat = ({ num, label, cta, href }) => {
 // ── component ─────────────────────────────────────────────────────────────────
 export default function Dashboard() {
     const { auth } = usePage().props;
-    const roleName = auth?.user?.role?.nombre ?? 'Administrador';
+    const roleName = auth?.user?.role?.nombre ?? 'admin';
     const cfg = ROLES[roleName] ?? ROLES.Administrador;
 
     return (

@@ -18,9 +18,7 @@ class Membresia extends Model
         'tipo',           
         'fecha_inicio',
         'fecha_fin',
-        'monto_pagado',
         'estado',         // activo | vencido | cancelado
-        'comprobante_path',
         'deleted',
     ];
 

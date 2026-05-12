@@ -1,0 +1,57 @@
+.card {
+  background: var(--bg-superficie);
+
+  border: 1px solid var(--borde);
+
+  border-radius: var(--radio-lg);
+
+  box-shadow: var(--sombra-card);
+
+  padding: 1.25rem;
+}
+
+.card-header {
+  margin-bottom: 1rem;
+  padding-bottom: .85rem;
+
+  border-bottom: 1px solid var(--borde);
+}
+
+.card-titulo {
+  font-size: .95rem;
+  font-weight: 700;
+
+  color: var(--texto-primario);
+}
+
+.card-subtitulo {
+  font-size: .78rem;
+
+  color: var(--texto-muted);
+
+  margin-top: 2px;
+}
+
+.access-card {
+  border: 1px solid rgba(255,255,255,.07);
+
+  background: linear-gradient(
+    180deg,
+    rgba(10,20,35,.82),
+    rgba(5,11,22,.92)
+  );
+
+  backdrop-filter: blur(18px);
+
+  border-radius: 28px;
+
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.25),
+    inset 0 1px 0 rgba(255,255,255,.04);
+
+  padding: 1.6rem;
+
+  position: relative;
+
+  overflow: hidden;
+}

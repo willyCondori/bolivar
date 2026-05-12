@@ -1,0 +1,51 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 8px 18px;
+
+  border: none;
+  border-radius: var(--radio-sm);
+
+  cursor: pointer;
+
+  transition: var(--transicion);
+
+  font-size: .82rem;
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+.btn-sm {
+  padding: 5px 12px;
+  font-size: .76rem;
+}
+
+.btn-peligro {
+  background: #dc2626;
+  color: #fff;
+}
+
+.btn-peligro:hover {
+  background: #b91c1c;
+}
+
+.btn-tema {
+  background: rgba(28,224,235,.08);
+
+  border: 1px solid rgba(28,224,235,.2);
+
+  border-radius: 8px;
+
+  padding: 8px;
+
+  cursor: pointer;
+
+  transition: .2s;
+}
+
+.btn-tema:hover {
+  background: rgba(28,224,235,.18);
+}

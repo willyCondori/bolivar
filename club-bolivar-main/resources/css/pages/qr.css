@@ -1,0 +1,19 @@
+.qr-readerWrap {
+    margin-top: 1.2rem;
+    border-radius: 22px;
+    border: 1px solid rgba(255,255,255,.08);
+    background: rgba(255,255,255,.02);
+    overflow: hidden;
+    min-height: 300px;
+
+    display: grid;
+    place-items: center;
+}
+
+.qr-placeholder {
+    color: rgba(224,224,255,.40);
+    font-weight: 650;
+    letter-spacing: .02em;
+    padding: 2rem;
+    text-align: center;
+}

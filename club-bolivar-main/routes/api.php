@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
-use App\Http\Controllers\Api\SocioRegistrationController;
+use App\Http\Api\SocioRegistrationController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\AccesoQRController;
 
