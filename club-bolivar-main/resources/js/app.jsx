@@ -11,12 +11,8 @@ createInertiaApp({
     title: (title) => `${title} - ${appName}`,
 
     resolve: (name) => {
-        console.log("Cargando:", name); 
-
-        return resolvePageComponent(
-            `./pages/${name}.jsx`,
-            import.meta.glob('./pages/**/*.jsx'),
-        );
+        const pages = import.meta.glob('./pages/**/*.jsx', { eager: true });
+        return pages[`./pages/${name}.jsx`];
     },
 
     setup({ el, App, props }) {

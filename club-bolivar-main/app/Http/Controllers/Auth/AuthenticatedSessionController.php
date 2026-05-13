@@ -32,18 +32,19 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
-        $user = Auth::user();
+        $user = Auth::user()->load('role');
 
         // ✅ Verificar estado del socio
         if ($user->role && $user->role->nombre === 'socio') {
 
-            $socio = \App\Models\Socio::where('user_id', $user->id)->first();
-
+        $socio = \App\Models\Socio::select('id', 'estado', 'user_id')
+            ->where('user_id', $user->id)
+            ->first();
+            
             if ($socio && in_array($socio->estado, ['inactivo', 'Bloqueado'])) {
 
                 Auth::guard('web')->logout();
 
-                // ❌ NO invalidar sesión antes del error
                 throw ValidationException::withMessages([
                     'email' => $socio->estado === 'Inactivo'
                         ? 'Tu cuenta está inactiva. Contacta con el administrador.'

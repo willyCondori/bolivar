@@ -28,6 +28,7 @@ mkcert -cert-file ssl\cert.pem -key-file ssl\key.pem %LOCAL_IP% localhost 127.0.
 powershell -Command "(Get-Content .env) -replace 'APP_URL=.*', 'APP_URL=http://127.0.0.1:8000' | Set-Content .env"
 
 echo Limpiando cache Laravel...
+php artisan optimize:clear
 php artisan config:clear
 php artisan cache:clear
 php artisan route:clear

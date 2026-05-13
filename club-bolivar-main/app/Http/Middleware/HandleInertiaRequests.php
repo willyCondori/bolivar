@@ -32,7 +32,7 @@ class HandleInertiaRequests extends Middleware
         $user = $request->user();
 
         if ($user) {
-            $user->loadMissing('role');
+            $user = $request->user()?->load('role:id,nombre');
         }
 
         return [

@@ -139,7 +139,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/socio/panel', function () {
             $user = Auth::user();
 
-            // 🔥 OPTIMIZACIÓN: evitar query extra innecesaria si ya viene cargado
+            // OPTIMIZACIÓN: evitar query extra innecesaria si ya viene cargado
             $socio = Socio::with('membresiaActiva')
                 ->where('user_id', $user->id)
                 ->first();

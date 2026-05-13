@@ -15,12 +15,13 @@
 @import './components/access-type.css';
 
 @import './layouts/dashboard.css';
+@import './layouts/sidebar.css';
 
 @import './pages/login.css';
 @import './pages/accesos.css';
 @import './pages/qr.css';
 @import './pages/facial.css';
-@import './layouts/sidebar.css';
+@import './pages/error.css';
 
 @tailwind base;
 @tailwind components;

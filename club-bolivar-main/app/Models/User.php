@@ -23,6 +23,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
     ];
+    protected $with = ['role:id,nombre'];
 
     protected $keyType = 'string';
     public $incrementing = false;

@@ -81,7 +81,7 @@ export default function AppSidebarLayout({ title = 'Panel', children }) {
     const [ready, setReady] = useState(false);
     const canvasRef = useRef(null);
 
-    useParticles(canvasRef);
+    //useParticles(canvasRef);
 
     useEffect(() => {
         const t = setTimeout(() => setReady(true), 100);

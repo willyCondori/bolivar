@@ -10,7 +10,7 @@ class RoleMiddleware
 {
     public function handle(Request $request, Closure $next, string ...$roles): mixed
     {
-        $user = Auth::user();
+        $user = Auth::user()?->loadMissing('role:id,nombre');
 
         if (!$user) {
             abort(403, 'Sin acceso.');
