@@ -4,7 +4,7 @@ import AppSidebarLayout from '@/Layouts/AppSidebarLayout';
 
 export default function CrearUsuario({ roles }) {
 
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, setError, clearErrors } = useForm({
         name: '',
         email: '',
         password: '',
@@ -12,8 +12,42 @@ export default function CrearUsuario({ roles }) {
         role_id: '',
     });
 
+    const validate = () => {
+        let valid = true;
+
+        clearErrors();
+
+        // EMAIL VALIDATION
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(data.email)) {
+            setError('email', 'Email inválido');
+            valid = false;
+        }
+
+        // PASSWORD VALIDATION
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z]).{8,16}$/;
+
+        if (!passwordRegex.test(data.password)) {
+            setError(
+                'password',
+                'La contraseña debe tener 8-16 caracteres, una mayúscula y una minúscula'
+            );
+            valid = false;
+        }
+
+        if (data.password !== data.password_confirmation) {
+            setError('password_confirmation', 'Las contraseñas no coinciden');
+            valid = false;
+        }
+
+        return valid;
+    };
+
     const submit = (e) => {
         e.preventDefault();
+
+        if (!validate()) return;
+
         post(route('users.store'));
     };
 
@@ -23,11 +57,12 @@ export default function CrearUsuario({ roles }) {
             <div className="max-w-2xl mx-auto p-6 bg-white/5 rounded-2xl border border-white/10">
 
                 <h1 className="text-xl font-bold text-cyan-400 mb-6">
-                    Registrar Usuario
+                    Registrar Personal
                 </h1>
 
                 <form onSubmit={submit} className="space-y-4">
 
+                    {/* NAME */}
                     <div>
                         <label>Nombre</label>
                         <input
@@ -38,6 +73,7 @@ export default function CrearUsuario({ roles }) {
                         {errors.name && <p className="text-red-400">{errors.name}</p>}
                     </div>
 
+                    {/* EMAIL */}
                     <div>
                         <label>Email</label>
                         <input
@@ -49,6 +85,7 @@ export default function CrearUsuario({ roles }) {
                         {errors.email && <p className="text-red-400">{errors.email}</p>}
                     </div>
 
+                    {/* PASSWORD */}
                     <div>
                         <label>Contraseña</label>
                         <input
@@ -60,6 +97,7 @@ export default function CrearUsuario({ roles }) {
                         {errors.password && <p className="text-red-400">{errors.password}</p>}
                     </div>
 
+                    {/* CONFIRM PASSWORD */}
                     <div>
                         <label>Confirmar contraseña</label>
                         <input
@@ -68,8 +106,12 @@ export default function CrearUsuario({ roles }) {
                             value={data.password_confirmation}
                             onChange={e => setData('password_confirmation', e.target.value)}
                         />
+                        {errors.password_confirmation && (
+                            <p className="text-red-400">{errors.password_confirmation}</p>
+                        )}
                     </div>
 
+                    {/* ROLE */}
                     <div>
                         <label>Rol</label>
                         <select

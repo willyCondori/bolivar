@@ -11,13 +11,18 @@ createInertiaApp({
     title: (title) => `${title} - ${appName}`,
 
     resolve: (name) => {
-        const pages = import.meta.glob('./pages/**/*.jsx', { eager: true });
-        return pages[`./pages/${name}.jsx`];
+        const pages = import.meta.glob('./pages/**/*.jsx');
+
+        return resolvePageComponent(
+            `./pages/${name}.jsx`,
+            pages
+        );
     },
 
     setup({ el, App, props }) {
-        const root = createRoot(el);
-        root.render(<App {...props} />);
+        createRoot(el).render(
+            <App {...props} />
+        );
     },
 
     progress: {

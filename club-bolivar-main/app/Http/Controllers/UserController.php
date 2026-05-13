@@ -12,12 +12,11 @@ class UserController extends Controller
 {
     public function create()
     {
-        // 🔥 OPTIMIZACIÓN: select mínimo de columnas
         $roles = Role::whereIn('nombre', ['admin', 'operador'])
             ->select('id', 'nombre')
             ->get();
 
-        return Inertia::render('Usuarios/CrearUsuario', [
+        return Inertia::render('Accesos/Usuarios/CrearUsuario', [
             'roles' => $roles
         ]);
     }
@@ -34,7 +33,7 @@ class UserController extends Controller
         $role = Role::select('id', 'nombre')
             ->find($request->role_id);
 
-        if (!$role || !in_array($role->nombre, ['Admin', 'Operador'])) {
+        if (!$role || !in_array($role->nombre, ['admin', 'operador'])) {
             return back()->withErrors([
                 'role_id' => 'Rol no permitido'
             ]);
@@ -48,7 +47,8 @@ class UserController extends Controller
             'activo'   => true,
         ]);
 
-        return redirect()->route('users.index')
-            ->with('success', 'Usuario creado correctamente');
+        return back()->with([
+            'success' => 'Usuario creado correctamente'
+        ]);
     }
 }
