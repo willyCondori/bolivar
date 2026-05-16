@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # 1. El Backend Laravel + React (Vite ya compilado)
+  web-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/var/www
+      # Evita que se sobreescriban los node_modules locales dentro del contenedor
+      - /var/www/node_modules
+    environment:
+      - APP_ENV=local
+      - APP_URL=http://localhost:8000
+      - FACIAL_API_URL=http://facial-api:8081
+
+  # 2. El Servicio de Reconocimiento Facial en Python
+  facial-api:
+    build:
+      context: ./reconocimiento
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./reconocimiento:/app
+      - /app/venv # No arrastrar el entorno virtual local de Windows
+
+  # 3. El túnel de Cloudflare integrado
+  cloudflare-tunnel:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run --url http://web-app:8000
+    depends_on:
+      - web-app
