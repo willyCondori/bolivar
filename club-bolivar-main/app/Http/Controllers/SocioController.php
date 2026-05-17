@@ -62,7 +62,26 @@ class SocioController extends Controller
 
         $socio = null; // ← para usarlo fuera de la transacción
 
-        DB::transaction(function () use ($request, $fotoPath, $roleId, &$socio) {
+        $absolutePath = storage_path('app/public/' . $fotoPath);
+
+        $response = Http::attach(
+            'file',
+            file_get_contents($absolutePath),
+            basename($absolutePath)
+        )->post(env('FASTAPI_URL') . '/embedding');
+
+        if (!$response->successful() || !$response->json('success')) {
+
+            Storage::disk('public')->delete($fotoPath);
+
+            return back()->withErrors([
+                'foto' => 'No se pudo generar el embedding facial'
+            ]);
+        }
+
+        $embedding = $response->json('embedding');
+
+        DB::transaction(function () use ($request, $fotoPath, $roleId, $embedding, &$socio) {
 
             $user = User::create([
                 'id'       => (string) Str::uuid(),
@@ -91,7 +110,10 @@ class SocioController extends Controller
                 'email'               => $request->email,
                 'user_id'             => $user->id,
                 'qr_token'            => (string) Str::uuid(),
-                'tipo_membresia'      => 'Bronce',
+                'embedding' => '[' . implode(',', $embedding) . ']',
+                'embedding_updated_at' => now(),
+                'sync_version' => 1,
+                'updated_at' => now(),
             ]);
 
             Membresia::create([
@@ -126,7 +148,6 @@ class SocioController extends Controller
             'email'          => 'nullable|email',
             'estado'         => 'required',
             'foto'           => 'nullable',
-            'tipo_membresia' => 'nullable|in:Bronce,Plata,Oro',
         ]);
 
         $fotoActualizada = null;

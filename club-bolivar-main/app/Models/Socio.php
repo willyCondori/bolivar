@@ -14,7 +14,8 @@ class Socio extends Model
 
     protected $keyType = 'string';
     public $incrementing = false;
-    public $timestamps = false;
+
+    public $timestamps = true;
 
     protected $fillable = [
         'user_id',
@@ -34,6 +35,11 @@ class Socio extends Model
         'activo',
         'deleted',
         'qr_token',
+
+        // 🧠 NUEVOS CAMPOS IA
+        'embedding',
+        'embedding_updated_at',
+        'sync_version',
     ];
 
     protected $casts = [
@@ -41,9 +47,9 @@ class Socio extends Model
         'fecha_ingreso'    => 'date',
         'activo'           => 'boolean',
         'deleted'          => 'boolean',
+        'embedding'        => 'array',
+        'embedding_updated_at' => 'datetime',
     ];
-
-    /* ── Boot optimizado ─────────────────────────────────────────── */
 
     protected static function booted(): void
     {
@@ -52,7 +58,7 @@ class Socio extends Model
         });
     }
 
-    /* ── Relaciones ─────────────────────────────────────────────── */
+    /* ── Relaciones ── */
 
     public function user()
     {
@@ -64,9 +70,6 @@ class Socio extends Model
         return $this->hasMany(Membresia::class, 'socio_id');
     }
 
-    /**
-     * Membresia activa optimizada (SIN orderBy pesado en relación)
-     */
     public function membresiaActiva()
     {
         return $this->hasOne(Membresia::class, 'socio_id')
@@ -77,7 +80,7 @@ class Socio extends Model
             ->latest('fecha_inicio');
     }
 
-    /* ── Scopes útiles para performance ─────────────────────────── */
+    /* ── Scopes ── */
 
     public function scopeActivos($query)
     {

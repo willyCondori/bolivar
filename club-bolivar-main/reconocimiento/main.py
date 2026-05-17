@@ -9,6 +9,41 @@ import cv2
 app = FastAPI()
 
 
+@app.post("/embedding")
+async def generar_embedding(file: UploadFile = File(...)):
+
+    path_temp = None
+
+    try:
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp:
+
+            temp.write(await file.read())
+            path_temp = temp.name
+
+        embedding = DeepFace.represent(
+            img_path=path_temp,
+            model_name="Facenet512",
+            enforce_detection=True
+        )
+
+        return {
+            "success": True,
+            "embedding": embedding[0]["embedding"]
+        }
+
+    except Exception as e:
+
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+    finally:
+
+        if path_temp and os.path.exists(path_temp):
+            os.remove(path_temp)
+
 def validar_rostro(path_imagen):
     """
     Valida que exista exactamente un rostro
