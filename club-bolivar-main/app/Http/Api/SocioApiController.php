@@ -13,6 +13,9 @@ class SocioApiController extends Controller
                 'id',
                 'nombres',
                 'apellidos',
+                'ci',
+                'telefono',
+                'estado',
                 'qr_token',
                 'foto_path',
                 'embedding',
@@ -24,23 +27,15 @@ class SocioApiController extends Controller
             ->get()
             ->map(function ($s) {
 
-                // pgvector devuelve el embedding como string "[0.1,0.2,...]"
-                // necesitamos convertirlo a array de floats para Flutter
                 $embedding = $s->embedding;
 
+                // Caso pgvector string: "[0.1,0.2,...]"
                 if (is_string($embedding)) {
-                    // quitar corchetes y convertir a array de floats
-                    $embedding = json_decode(
-                        str_replace(['[', ']'], ['[', ']'], $embedding),
-                        true
-                    );
-                }
+                    $clean = trim($embedding, '[]{}');
 
-                // si sigue siendo string con formato pgvector: {0.1,0.2,...}
-                if (is_string($embedding)) {
                     $embedding = array_map(
                         'floatval',
-                        explode(',', trim($embedding, '{}[]'))
+                        explode(',', $clean)
                     );
                 }
 
@@ -51,7 +46,7 @@ class SocioApiController extends Controller
                     'ci'            => $s->ci,
                     'telefono'      => $s->telefono,
                     'estado'        => $s->estado,
-                    'membresia'     => optional($s->membresia)->tipo,
+                    'membresia'     => optional($s->membresia)->tipo ?? null,
                     'qr_token'      => $s->qr_token,
 
                     'foto_url'      => $s->foto_path
