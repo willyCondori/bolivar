@@ -11,6 +11,7 @@ use App\Models\IntentoAccesoFallido;
 use App\Services\AccesoSocioService;
 use App\Models\User;
 use App\Notifications\AccesoRegistradoNotification;
+use Illuminate\Support\Facades\DB;
 
 class ReconocimientoController extends Controller
 {
@@ -71,38 +72,32 @@ class ReconocimientoController extends Controller
                     'mensaje' => 'Embedding inválido'
                 ], 500);
             }
-
             $vector = '[' . implode(',', $embedding) . ']';
 
-            /* ─────────────────────────────
-             * 2. PGVECTOR SEARCH
-             * ───────────────────────────── */
-            $socio = Socio::select('id', 'nombres', 'apellidos', 'foto_path', 'activo', 'estado', 'deleted')
-                ->selectRaw("embedding <=> ? as distance", [$vector])
-                ->whereNotNull('embedding')
+            $resultado = DB::table('socio_embeddings as se')
+                ->join('socios as s', 's.id', '=', 'se.socio_id')
+                ->select(
+                    's.id',
+                    's.nombres',
+                    's.apellidos',
+                    's.ci',
+                    's.foto_path',
+                    's.activo',
+                    's.estado',
+                    's.deleted'
+                )
+                ->selectRaw("se.embedding <=> ? as distance", [$vector])
+                ->whereNotNull('se.embedding')
                 ->orderBy('distance')
                 ->first();
 
-            Log::info('🔎 Resultado pgvector', [
-                'socio' => $socio?->id,
-                'socio' => $socio?->nombres,
-                'distance' => $socio?->distance ?? null
-            ]);
+            // Convertir a objeto usable
+            $socio = $resultado ? Socio::find($resultado->id) : null;
 
-            if (!$socio || $socio->distance > 0.7) {
-
-                IntentoAccesoFallido::create([
-                    'socio_id' => null,
-                    'ip_dispositivo' => $request->ip(),
-                    'motivo_rechazo' => 'No identificado (pgvector)',
-                ]);
-
-                return response()->json([
-                    'estado' => 'fallo',
-                    'mensaje' => 'No identificado'
-                ]);
-            }
-
+            if ($socio) {
+                $socio->distance = $resultado->distance;
+            }            
+            
             /* ─────────────────────────────
              * 3. VALIDACIÓN NEGOCIO
              * ───────────────────────────── */
@@ -183,12 +178,20 @@ class ReconocimientoController extends Controller
             ]);
 
             return response()->json([
-                'estado' => 'exito',
-                'id' => $socio->id,
-                'nombres' => $socio->nombres,
-                'apellidos' => $socio->apellidos,
-                'similaridad' => 1 - $socio->distance,
-                'mensaje' => 'Acceso concedido'
+                'estado'      => 'exito',
+                'id'          => $socio->id,
+                'nombres'     => $socio->nombres,
+                'apellidos'   => $socio->apellidos,
+                'ci'          => $socio->ci,
+                'foto_path'   => $socio->foto_path
+                    ? asset('storage/' . $socio->foto_path)
+                    : null,
+                'estado_socio'    => $socio->estado,
+                'tipo_membresia'  => $socio->membresiaActiva?->tipo ?? 'Sin membresía',
+                'estado_membresia'=> $socio->membresiaActiva?->estado ?? '---',
+                'fecha_fin'       => $socio->membresiaActiva?->fecha_fin,
+                'similaridad'     => round(1 - $socio->distance, 4),
+                'mensaje'         => 'Acceso concedido',
             ]);
 
         } catch (\Exception $e) {

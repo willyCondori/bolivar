@@ -67,7 +67,7 @@ export default function SociosEdit({ socio }) {
         e.preventDefault();
 
         post(route('socios.update', socio.id), {
-            forceFormData: true, // 🔥 ESTE ES EL FIX REAL
+            forceFormData: true,
         });
     };
 

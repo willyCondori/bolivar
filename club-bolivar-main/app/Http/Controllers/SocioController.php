@@ -39,7 +39,7 @@ class SocioController extends Controller
     }
 
     /* ─────────────────────────────
-     * STORE (CREAR SOCIO + EMBEDDING)
+     * STORE
      * ───────────────────────────── */
     public function store(Request $request)
     {
@@ -63,61 +63,65 @@ class SocioController extends Controller
         $fotoPath = $this->uploadBase64($request->foto);
         $absolutePath = storage_path('app/public/' . $fotoPath);
 
-        // embedding inicial
-        $embedding = $this->generateEmbedding($absolutePath);
+        try {
 
-        DB::transaction(function () use ($request, $fotoPath, $roleId, $embedding, &$socio) {
+            DB::transaction(function () use ($request, $fotoPath, $roleId, $absolutePath) {
 
-            $user = User::create([
-                'id' => (string) Str::uuid(),
-                'name' => $request->nombres . ' ' . $request->apellidos,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'role_id' => $roleId,
-                'activo' => true,
-            ]);
+                $user = User::create([
+                    'id' => (string) Str::uuid(),
+                    'name' => $request->nombres . ' ' . $request->apellidos,
+                    'email' => $request->email,
+                    'password' => Hash::make($request->password),
+                    'role_id' => $roleId,
+                    'activo' => true,
+                ]);
 
-            $socio = Socio::create([
-                'id' => (string) Str::uuid(),
-                'numero_socio' => 'SOC-' . strtoupper(Str::random(6)),
-                'nombres' => $request->nombres,
-                'apellidos' => $request->apellidos,
-                'ci' => $request->ci,
-                'fecha_nacimiento' => $request->fecha_nacimiento,
-                'telefono' => $request->telefono,
-                'direccion' => $request->direccion,
-                'estado' => 'activo',
-                'estado_aprobacion' => 'Aprobado',
-                'fecha_ingreso' => now(),
-                'foto_path' => $fotoPath,
-                'activo' => 1,
-                'deleted' => 0,
-                'email' => $request->email,
-                'user_id' => $user->id,
-                'qr_token' => (string) Str::uuid(),
+                $socio = Socio::create([
+                    'id' => (string) Str::uuid(),
+                    'numero_socio' => 'SOC-' . strtoupper(Str::random(6)),
+                    'nombres' => $request->nombres,
+                    'apellidos' => $request->apellidos,
+                    'ci' => $request->ci,
+                    'fecha_nacimiento' => $request->fecha_nacimiento,
+                    'telefono' => $request->telefono,
+                    'direccion' => $request->direccion,
+                    'estado' => 'activo',
+                    'estado_aprobacion' => 'Aprobado',
+                    'fecha_ingreso' => now(),
+                    'foto_path' => $fotoPath,
+                    'activo' => 1,
+                    'deleted' => 0,
+                    'email' => $request->email,
+                    'user_id' => $user->id,
+                    'qr_token' => (string) Str::uuid(),
+                ]);
 
-                // embedding inicial
-                'embedding' => $embedding,
-                'embedding_updated_at' => now(),
-                'sync_version' => 1,
-            ]);
+                // embeddings (seguro, no rompe transacción)
+                $this->guardarEmbeddings($socio->id, $absolutePath, 'frontal');
 
-            Membresia::create([
-                'id' => (string) Str::uuid(),
-                'socio_id' => $socio->id,
-                'tipo' => $request->tipo_membresia,
-                'fecha_inicio' => now()->toDateString(),
-                'fecha_fin' => now()->addMonth()->toDateString(),
-                'estado' => 'activo',
-                'deleted' => false,
-            ]);
-        });
+                Membresia::create([
+                    'id' => (string) Str::uuid(),
+                    'socio_id' => $socio->id,
+                    'tipo' => $request->tipo_membresia,
+                    'fecha_inicio' => now()->toDateString(),
+                    'fecha_fin' => now()->addMonth()->toDateString(),
+                    'estado' => 'activo',
+                    'deleted' => false,
+                ]);
+            });
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error creando socio',
+                'detalle' => $e->getMessage()
+            ], 500);
+        }
 
         return redirect()->route('socios.index');
     }
 
     /* ─────────────────────────────
-     * UPDATE (CON RE-EMBEDDING)
+     * UPDATE
      * ───────────────────────────── */
     public function update(Request $request, Socio $socio)
     {
@@ -132,7 +136,6 @@ class SocioController extends Controller
 
         $fotoPath = $socio->foto_path;
 
-        /* ── CASO FOTO BASE64 ── */
         if ($request->filled('foto') && str_contains($request->foto, 'data:image')) {
 
             if ($socio->foto_path) {
@@ -143,7 +146,6 @@ class SocioController extends Controller
             $validated['foto_path'] = $fotoPath;
         }
 
-        /* ── CASO FILE UPLOAD ── */
         if ($request->hasFile('foto')) {
 
             if ($socio->foto_path) {
@@ -156,24 +158,18 @@ class SocioController extends Controller
 
         unset($validated['foto']);
 
-        /* ─────────────────────────────
-         * RE-EMBEDDING SI CAMBIÓ FOTO
-         * ───────────────────────────── */
         if (isset($validated['foto_path'])) {
-
             $absolutePath = storage_path('app/public/' . $fotoPath);
-            $embedding = $this->generateEmbedding($absolutePath);
 
-            if ($embedding) {
-                $validated['embedding'] = $embedding;
-                $validated['embedding_updated_at'] = now();
-                $validated['sync_version'] = $socio->sync_version + 1;
-            }
+            \App\Models\SocioEmbedding::where('socio_id', $socio->id)->delete();
+
+            $this->guardarEmbeddings($socio->id, $absolutePath, 'frontal');
+
+            unset($validated['embedding'], $validated['embedding_updated_at'], $validated['sync_version']);
         }
 
         $socio->update($validated);
 
-        /* ── MEMBRESÍA ── */
         if ($request->filled('membresia_plan')) {
 
             $membresia = $socio->membresiaActiva;
@@ -198,32 +194,57 @@ class SocioController extends Controller
     }
 
     /* ─────────────────────────────
-     * EMBEDDING HELPER
+     * EMBEDDING
      * ───────────────────────────── */
-    private function generateEmbedding(string $absolutePath): ?string
+    private function generateEmbedding(string $absolutePath, string $etiqueta = 'frontal'): ?array
     {
-        $response = Http::attach(
+        try {
+            $response = Http::attach(
                 'file',
                 file_get_contents($absolutePath),
                 basename($absolutePath)
-            )
-            ->post(env('FACIAL_API_URL') . '/embedding');
+            )->post(env('FACIAL_API_URL') . '/embedding', [
+                'etiqueta' => $etiqueta
+            ]);
 
-        if (!$response->successful()) {
+            if (!$response->successful()) return null;
+
+            $embedding = $response->json('embedding');
+            $confianza = $response->json('confianza', 0);
+
+            if (!$embedding || !is_array($embedding)) return null;
+
+            return [
+                'vector' => '[' . implode(',', $embedding) . ']',
+                'confianza' => $confianza,
+            ];
+        } catch (\Exception $e) {
             return null;
         }
-
-        $embedding = $response->json('embedding');
-
-        if (!$embedding || !is_array($embedding)) {
-            return null;
-        }
-
-        // convertir array -> formato vector postgres
-        return '[' . implode(',', $embedding) . ']';
     }
 
-    /* ───────────────────────────── */
+    private function guardarEmbeddings(string $socioId, string $absolutePath, string $etiqueta = 'frontal'): void
+    {
+        $resultado = $this->generateEmbedding($absolutePath, $etiqueta);
+
+        if (!$resultado) return;
+
+        \App\Models\SocioEmbedding::create([
+            'id' => (string) Str::uuid(),
+            'socio_id' => $socioId,
+            'embedding' => $resultado['vector'],
+            'etiqueta' => $etiqueta,
+            'confianza' => $resultado['confianza'],
+            'created_at' => now(),
+        ]);
+
+        \App\Models\Socio::where('id', $socioId)->update([
+            'embedding' => $resultado['vector'],
+            'embedding_updated_at' => now(),
+            'sync_version' => DB::raw('sync_version + 1'),
+        ]);
+    }
+
     private function uploadBase64(string $base64String): string
     {
         $img = preg_replace('/^data:image\/\w+;base64,/', '', $base64String);
@@ -238,10 +259,32 @@ class SocioController extends Controller
 
         return 'fotos_socios/' . $fileName;
     }
+
     public function edit(Socio $socio)
     {
         return Inertia::render('Accesos/Socios/SociosEdit', [
             'socio' => $socio->load('membresiaActiva'),
+        ]);
+    }
+
+    public function agregarEmbedding(Request $request, Socio $socio)
+    {
+        $request->validate([
+            'foto' => 'required|string',
+            'etiqueta' => 'required|in:frontal,lentes,lateral,oscuro,otro',
+        ]);
+
+        $fotoPath = $this->uploadBase64($request->foto);
+        $absolutePath = storage_path('app/public/' . $fotoPath);
+
+        $this->guardarEmbeddings($socio->id, $absolutePath, $request->etiqueta);
+
+        Storage::disk('public')->delete($fotoPath);
+
+        return response()->json([
+            'ok' => true,
+            'mensaje' => "Embedding '{$request->etiqueta}' agregado correctamente",
+            'total' => \App\Models\SocioEmbedding::where('socio_id', $socio->id)->count(),
         ]);
     }
 }

@@ -27,7 +27,8 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
-
+Route::post('/{socio}/embeddings', [SocioController::class, 'agregarEmbedding'])
+    ->name('socios.embeddings.store');
 /* ─────────────────────────────
 | 🔹 AUTH GENERAL
 └─────────────────────────────*/
