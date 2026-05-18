@@ -36,7 +36,7 @@ class Socio extends Model
         'deleted',
         'qr_token',
 
-        // 🧠 NUEVOS CAMPOS IA
+        // IA
         'embedding',
         'embedding_updated_at',
         'sync_version',
@@ -47,7 +47,6 @@ class Socio extends Model
         'fecha_ingreso'    => 'date',
         'activo'           => 'boolean',
         'deleted'          => 'boolean',
-        'embedding'        => 'array',
         'embedding_updated_at' => 'datetime',
     ];
 
@@ -58,8 +57,7 @@ class Socio extends Model
         });
     }
 
-    /* ── Relaciones ── */
-
+    /* Relaciones */
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -80,8 +78,7 @@ class Socio extends Model
             ->latest('fecha_inicio');
     }
 
-    /* ── Scopes ── */
-
+    /* Scopes */
     public function scopeActivos($query)
     {
         return $query->where([

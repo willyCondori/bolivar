@@ -9,7 +9,7 @@ class AccesoSocioService
     public function validarSocio(Socio $socio): ?array
     {
         $estado = match (true) {
-            $socio->deleted => 'Socio eliminado',
+            $socio->deleted === true => 'Socio eliminado',
             !$socio->activo => 'Socio inactivo',
             $socio->estado === 'bloqueado' => 'Socio bloqueado',
             default => null,

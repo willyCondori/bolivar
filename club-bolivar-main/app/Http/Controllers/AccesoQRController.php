@@ -24,7 +24,7 @@ class AccesoQRController extends Controller
             ]);
 
             // 🔥 OPTIMIZACIÓN: solo campos necesarios
-            $socio = Socio::select('id', 'nombres', 'apellidos', 'qr_token')
+            $socio = Socio::select('id', 'nombres', 'apellidos', 'qr_token', 'estado', 'activo', 'deleted')
                 ->where('qr_token', $request->codigo)
                 ->first();
 
@@ -57,7 +57,7 @@ class AccesoQRController extends Controller
 
             $acceso = Acceso::create([
                 'socio_id'            => $socio->id,
-                'user_id'             => Auth::id(),
+                'user_id'             => Auth::id() ?? null,
                 'tipo'                => $request->tipo,
                 'metodo_verificacion' => 'qr',
                 'resultado_pdi'       => 'aprobado',

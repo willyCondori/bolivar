@@ -8,14 +8,15 @@ use App\Models\User;
 use App\Http\Api\SocioRegistrationController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\AccesoQRController;
+use App\Http\Controllers\ReconocimientoController;
+use App\Http\Api\SocioApiController;
 
 /* ─────────────────────────────
 | 🔹 LOGIN
 └─────────────────────────────*/
-
 Route::post('/login', function (Request $request) {
-
     $user = User::select('id', 'name', 'email', 'password')
+        ->whereHas('role')
         ->where('email', $request->email)
         ->first();
 
@@ -23,7 +24,7 @@ Route::post('/login', function (Request $request) {
         return response()->json(['message' => 'Credenciales incorrectas'], 401);
     }
 
-    $token = $user->createToken('web')->plainTextToken;
+    $token = $user->createToken('apk-gym')->plainTextToken;
 
     return response()->json([
         'token' => $token,
@@ -31,47 +32,40 @@ Route::post('/login', function (Request $request) {
             'id'    => $user->id,
             'name'  => $user->name,
             'email' => $user->email,
+            'role'  => $user->role?->nombre,
         ],
     ]);
 });
 
-
 /* ─────────────────────────────
-| 🔹 REPORTES (SIN AUTH - TEST)
+| 🔹 PÚBLICAS (sin auth — APK sin login)
 └─────────────────────────────*/
-
 Route::get('/reportes/ingresos', [ReporteController::class, 'ingresos']);
-
-
-/* ─────────────────────────────
-| 🔹 QR
-└─────────────────────────────*/
 
 Route::post('/accesos/qr', [AccesoQRController::class, 'validarQR']);
 
+Route::post('/accesos/facial', [ReconocimientoController::class, 'verificar']);
+
+Route::get('/socios/sync', [SocioApiController::class, 'sync']);
 
 /* ─────────────────────────────
 | 🔹 PROTEGIDAS (SANCTUM)
 └─────────────────────────────*/
-
 Route::middleware('auth:sanctum')->group(function () {
 
-    Route::get('/user', fn(Request $request) =>
-        $request->user()
-    );
-
-    Route::get('/audit-logs', function () {
-        return DB::table('audit_logs')
-            ->select('id', 'fecha_hora', 'accion', 'usuario_id') // 🔥 optimizado
-            ->latest('fecha_hora')
-            ->limit(50)
-            ->get();
-    });
+    Route::get('/user', fn(Request $request) => $request->user());
 
     Route::post('/logout', function (Request $request) {
         $request->user()->currentAccessToken()->delete();
-
         return response()->json(['message' => 'Sesión cerrada']);
+    });
+
+    Route::get('/audit-logs', function () {
+        return DB::table('audit_logs')
+            ->select('id', 'fecha_hora', 'accion', 'usuario_id')
+            ->latest('fecha_hora')
+            ->limit(50)
+            ->get();
     });
 
     Route::post('/socios/registro', [SocioRegistrationController::class, 'store']);

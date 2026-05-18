@@ -93,9 +93,9 @@ export default function RegistrarSocio() {
     };
 
     const membresiaInfo = {
-        Celeste: { label: 'Celeste', desc: 'Acceso estándar a instalaciones comunes.', color: '#00BFFF', icon: '🔵' },
+        Celeste: { label: 'Celeste', desc: 'Acceso VIP y áreas exclusivas premium.', color: '#00BFFF', icon: '🔵' },
         Dorado:  { label: 'Dorado',  desc: 'Acceso intermedio con beneficios extra.', color: '#FFD700', icon: '🥇' },
-        Platino: { label: 'Platino', desc: 'Acceso VIP y áreas exclusivas premium.', color: '#E5E4E2', icon: '💎' },
+        Platino: { label: 'Platino', desc: 'Acceso estándar a instalaciones comunes.', color: '#E5E4E2', icon: '💎' },
     };
 
     const infoActual = membresiaInfo[data.tipo_membresia] ?? membresiaInfo.Platino;

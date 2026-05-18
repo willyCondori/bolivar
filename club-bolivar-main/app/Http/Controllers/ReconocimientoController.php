@@ -5,9 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Socio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use App\Models\Acceso;
-use Carbon\Carbon;
 use App\Models\IntentoAccesoFallido;
 use App\Services\AccesoSocioService;
 use App\Models\User;
@@ -23,166 +22,187 @@ class ReconocimientoController extends Controller
         ]);
 
         try {
-            $imagenCamara = $request->file('imagen');
 
-            $socios = Socio::whereNotNull('foto_path')
-                ->select('id', 'foto_path')
-                ->get();
+            $imagen = $request->file('imagen');
 
-            if ($socios->isEmpty()) {
-                return response()->json([
-                    'estado'  => 'error',
-                    'mensaje' => 'No hay socios registrados.'
-                ], 400);
-            }
+            Log::info('📸 Inicio reconocimiento facial', [
+                'ip' => $request->ip(),
+                'tipo' => $request->tipo
+            ]);
 
-            $urlFastAPI = 'http://127.0.0.1:8001/reconocer';
+            /* ─────────────────────────────
+             * 1. FASTAPI EMBEDDING
+             * ───────────────────────────── */
 
-            $requestFastAPI = Http::asMultipart()
-                ->attach(
-                    'file_camera',
-                    file_get_contents($imagenCamara->getRealPath()),
+            $response = Http::attach(
+                    'file',
+                    file_get_contents($imagen->getRealPath()),
                     'camera.jpg'
-                );
+                )
+                ->post(env('FACIAL_API_URL') . '/embedding');
 
-            foreach ($socios as $socio) {
+            Log::info('📡 Respuesta FastAPI embedding', [
+                'status' => $response->status(),
+                'body'   => $response->body()
+            ]);
 
-                $path = $socio->foto_path;
+            if (!$response->successful()) {
 
-                if ($path && Storage::disk('public')->exists($path)) {
-
-                    $requestFastAPI->attach(
-                        'file_db',
-                        Storage::disk('public')->get($path),
-                        $socio->id . '.jpg'
-                    );
-                }
-            }
-
-            $response = $requestFastAPI->timeout(30)->post($urlFastAPI);
-
-            if ($response->failed()) {
-                throw new \Exception("Servicio de IA no disponible.");
-            }
-
-            $resultado = $response->json();
-
-            if (!empty($resultado['match']) && !empty($resultado['id'])) {
-
-                $socioEncontrado = Socio::select('id', 'nombres', 'apellidos')
-                    ->find($resultado['id']);
-
-                if (!$socioEncontrado) {
-                    return response()->json([
-                        'estado'  => 'fallo',
-                        'mensaje' => 'Socio no encontrado'
-                    ]);
-                }
-
-                $validator = new AccesoSocioService();
-                $estado = $validator->validarSocio($socioEncontrado);
-
-                if ($estado) {
-
-                    IntentoAccesoFallido::create([
-                        'socio_id'        => $socioEncontrado->id,
-                        'ip_dispositivo'  => $request->ip(),
-                        'similitud_facial'=> $resultado['distance'] ?? null,
-                        'motivo_rechazo'  => $estado['motivo'],
-                    ]);
-
-                    return response()->json($estado, 403);
-                }
-
-                $bloqueo = $this->verificarBloqueoEntrada(
-                    $socioEncontrado->id,
-                    $request->tipo
-                );
-
-                if ($bloqueo) {
-
-                    IntentoAccesoFallido::create([
-                        'socio_id'        => $socioEncontrado->id,
-                        'ip_dispositivo'  => $request->ip(),
-                        'similitud_facial'=> $resultado['distance'] ?? null,
-                        'motivo_rechazo'  => 'Bloqueo temporal (3 minutos)',
-                    ]);
-
-                    return response()->json($bloqueo, 429);
-                }
-
-                $acceso = Acceso::create([
-                    'socio_id'            => $socioEncontrado->id,
-                    'tipo'                => $request->tipo,
-                    'metodo_verificacion' => 'facial',
-                    'resultado_pdi'       => 'aprobado',
-                    'similitud_facial'    => 1 - ($resultado['distance'] ?? 0),
-                    'ip_dispositivo'      => $request->ip(),
-                    'dispositivo_info'    => $request->userAgent(),
+                Log::error('❌ Error FastAPI embedding', [
+                    'body' => $response->body()
                 ]);
-
-                // 🔥 OPTIMIZACIÓN: consulta más ligera
-                $admins = User::whereHas('role', function ($q) {
-                        $q->where('nombre', 'admin');
-                    })
-                    ->select('id')
-                    ->get();
-
-                foreach ($admins as $admin) {
-                    $admin->notify(new AccesoRegistradoNotification($acceso));
-                }
 
                 return response()->json([
-                    'estado'   => 'exito',
-                    'nombres'  => $socioEncontrado->nombres,
-                    'apellidos'=> $socioEncontrado->apellidos,
-                    'id'       => $socioEncontrado->id,
-                    'tipo'     => $request->tipo,
-                    'mensaje'  => 'Acceso concedido'
+                    'estado' => 'error',
+                    'mensaje' => 'No se pudo generar embedding'
+                ], 500);
+            }
+
+            $embedding = $response->json('embedding');
+
+            if (!$embedding || !is_array($embedding)) {
+
+                Log::error('❌ Embedding inválido', [
+                    'response' => $response->json()
+                ]);
+
+                return response()->json([
+                    'estado' => 'error',
+                    'mensaje' => 'Embedding inválido'
+                ], 500);
+            }
+
+            $vector = '[' . implode(',', $embedding) . ']';
+
+            /* ─────────────────────────────
+             * 2. PGVECTOR SEARCH
+             * ───────────────────────────── */
+            $socio = Socio::select('id', 'nombres', 'apellidos', 'foto_path', 'activo', 'estado', 'deleted')
+                ->selectRaw("embedding <=> ? as distance", [$vector])
+                ->whereNotNull('embedding')
+                ->orderBy('distance')
+                ->first();
+
+            Log::info('🔎 Resultado pgvector', [
+                'socio' => $socio?->id,
+                'socio' => $socio?->nombres,
+                'distance' => $socio?->distance ?? null
+            ]);
+
+            if (!$socio || $socio->distance > 0.7) {
+
+                IntentoAccesoFallido::create([
+                    'socio_id' => null,
+                    'ip_dispositivo' => $request->ip(),
+                    'motivo_rechazo' => 'No identificado (pgvector)',
+                ]);
+
+                return response()->json([
+                    'estado' => 'fallo',
+                    'mensaje' => 'No identificado'
                 ]);
             }
 
-            IntentoAccesoFallido::create([
-                'socio_id'        => null,
-                'ip_dispositivo'  => $request->ip(),
-                'similitud_facial'=> $resultado['distance'] ?? null,
-                'motivo_rechazo'  => 'No identificado por IA',
+            /* ─────────────────────────────
+             * 3. VALIDACIÓN NEGOCIO
+             * ───────────────────────────── */
+
+            $validator = new AccesoSocioService();
+            $estado = $validator->validarSocio($socio);
+
+            if ($estado) {
+
+                Log::warning('⚠️ Socio rechazado por negocio', [
+                    'socio_id' => $socio->id,
+                    'motivo' => $estado['motivo']
+                ]);
+
+                IntentoAccesoFallido::create([
+                    'socio_id' => $socio->id,
+                    'ip_dispositivo' => $request->ip(),
+                    'motivo_rechazo' => $estado['motivo'],
+                ]);
+
+                return response()->json($estado, 403);
+            }
+
+            /* ─────────────────────────────
+             * 4. BLOQUEO 3 MIN
+             * ───────────────────────────── */
+
+            $limite = now()->subMinutes(3);
+
+            $ultimo = Acceso::where('socio_id', $socio->id)
+                ->where('tipo', 'entrada')
+                ->where('created_at', '>=', $limite)
+                ->latest()
+                ->first();
+
+            if ($request->tipo === 'entrada' && $ultimo) {
+
+                Log::warning('⛔ Bloqueo temporal', [
+                    'socio_id' => $socio->id,
+                    'ultimo_acceso' => $ultimo->created_at
+                ]);
+
+                return response()->json([
+                    'estado' => 'bloqueado',
+                    'mensaje' => 'Ya existe una entrada reciente (3 min)',
+                ], 429);
+            }
+
+            /* ─────────────────────────────
+             * 5. REGISTRO ACCESO
+             * ───────────────────────────── */
+
+            $acceso = Acceso::create([
+                'socio_id' => $socio->id,
+                'tipo' => $request->tipo,
+                'metodo_verificacion' => 'facial-pgvector',
+                'resultado_pdi' => 'aprobado',
+                'similitud_facial' => 1 - $socio->distance,
+                'ip_dispositivo' => $request->ip(),
+                'dispositivo_info' => $request->userAgent(),
+            ]);
+
+            /* ─────────────────────────────
+             * 6. NOTIFICACIÓN
+             * ───────────────────────────── */
+
+            $admins = User::whereHas('role', function ($q) {
+                $q->where('nombre', 'admin');
+            })->get();
+
+            foreach ($admins as $admin) {
+                $admin->notify(new AccesoRegistradoNotification($acceso));
+            }
+
+            Log::info('✅ Acceso registrado', [
+                'socio_id' => $socio->id,
+                'acceso_id' => $acceso->id
             ]);
 
             return response()->json([
-                'estado'  => 'fallo',
-                'mensaje' => 'Usuario no identificado'
+                'estado' => 'exito',
+                'id' => $socio->id,
+                'nombres' => $socio->nombres,
+                'apellidos' => $socio->apellidos,
+                'similaridad' => 1 - $socio->distance,
+                'mensaje' => 'Acceso concedido'
             ]);
 
         } catch (\Exception $e) {
 
+            Log::error('🔥 ERROR GENERAL RECONOCIMIENTO', [
+                'mensaje' => $e->getMessage(),
+                'linea' => $e->getLine(),
+                'archivo' => $e->getFile()
+            ]);
+
             return response()->json([
-                'estado'  => 'error',
-                'mensaje' => 'Error: ' . $e->getMessage()
+                'estado' => 'error',
+                'mensaje' => $e->getMessage()
             ], 500);
         }
-    }
-
-    private function verificarBloqueoEntrada($socioId, $tipo)
-    {
-        if ($tipo !== 'entrada') return null;
-
-        $limiteTiempo = now()->subMinutes(3);
-
-        $ultimoAcceso = Acceso::where('socio_id', $socioId)
-            ->where('tipo', 'entrada')
-            ->where('created_at', '>=', $limiteTiempo)
-            ->latest()
-            ->first(['id', 'created_at']);
-
-        if ($ultimoAcceso) {
-            return [
-                'estado'        => 'bloqueado',
-                'mensaje'       => 'Ya existe una entrada reciente (menos de 3 minutos).',
-                'ultimo_acceso' => $ultimoAcceso->created_at
-            ];
-        }
-
-        return null;
     }
 }
