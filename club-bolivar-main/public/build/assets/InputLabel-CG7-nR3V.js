@@ -1,0 +1,1 @@
+import{n as e}from"./chunk-HdlhfhqF.js";import{t}from"./app-yWRS4dwM.js";function n({value:e,className:t=``,children:n,...i}){return(0,r.jsx)(`label`,{...i,className:`block text-sm font-medium text-gray-700 `+t,children:e||n})}var r,i=e((()=>{r=t()}));export{i as n,n as t};

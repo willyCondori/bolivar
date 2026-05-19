@@ -1,4 +1,10 @@
 !private/
+
+# 1. Permitir la carpeta public y la subcarpeta de fotos de socios
 !public/
+!public/fotos_socios/
+!public/fotos_socios/**
+
+# 2. El candado que bloquea todo lo demás (SIEMPRE AL FINAL)
 *
 !.gitignore
