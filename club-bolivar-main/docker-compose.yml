@@ -8,7 +8,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    # Forzamos a Laravel a escuchar en todas las interfaces para que el túnel lo vea
     command: php artisan serve --host=0.0.0.0 --port=8000
     volumes:
       - .:/var/www
@@ -29,10 +28,9 @@ services:
       - ./reconocimiento:/app
       - /app/venv
 
-  # 3. El túnel de Cloudflare integrado (Túnel rápido de prueba)
+  # 3. El túnel de Cloudflare integrado
   cloudflare-tunnel:
     image: cloudflare/cloudflared:latest
-    # Corregimos la sintaxis para que use el proxy rápido correctamente
     command: tunnel --no-autoupdate --url http://web-app:8000
     depends_on:
       - web-app
