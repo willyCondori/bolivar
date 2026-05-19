@@ -12,6 +12,12 @@
 /.zed
 /auth.json
 /node_modules
+<<<<<<< HEAD
+=======
+/public/build
+/public/hot
+/public/storage
+>>>>>>> versionmovil
 /vendor
 _ide_helper.php
 Homestead.json
