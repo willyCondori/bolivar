@@ -38,16 +38,24 @@ export default function EscaneoQR() {
 
                 setLoading(true);
 
-                try {
-                    const res = await axios.post('/api/accesos/qr', {
-                        codigo: text,
-                        tipo,
-                    });
+            // DESPUÉS
+            try {
+                const res = await axios.post('/api/accesos/qr', {
+                    codigo: text,
+                    tipo,
+                });
 
-                    setResult(res.data);
-                } finally {
-                    setLoading(false);
+                setResult(res.data);
+            } catch (err) {
+                // 422, 403, 429 — el backend devuelve JSON con estado/motivo
+                if (err.response?.data) {
+                    setResult(err.response.data);
+                } else {
+                    setResult({ estado: 'error', mensaje: 'Error de conexión.' });
                 }
+            } finally {
+                setLoading(false);
+            }
             }
         );
 

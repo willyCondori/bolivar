@@ -9,12 +9,12 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Acceso;
 use App\Models\IntentoAccesoFallido;
 use App\Services\AccesoSocioService;
-use App\Models\User;
-use App\Notifications\AccesoRegistradoNotification;
 use Illuminate\Support\Facades\DB;
 
 class ReconocimientoController extends Controller
 {
+    public function __construct(private AccesoSocioService $accesoService) {}
+
     public function verificar(Request $request)
     {
         $request->validate([
@@ -27,8 +27,8 @@ class ReconocimientoController extends Controller
             $imagen = $request->file('imagen');
 
             Log::info('📸 Inicio reconocimiento facial', [
-                'ip' => $request->ip(),
-                'tipo' => $request->tipo
+                'ip'   => $request->ip(),
+                'tipo' => $request->tipo,
             ]);
 
             /* ─────────────────────────────
@@ -44,167 +44,126 @@ class ReconocimientoController extends Controller
 
             Log::info('📡 Respuesta FastAPI embedding', [
                 'status' => $response->status(),
-                'body'   => $response->body()
+                'body'   => $response->body(),
             ]);
 
             if (!$response->successful()) {
-
-                Log::error('❌ Error FastAPI embedding', [
-                    'body' => $response->body()
-                ]);
-
-                return response()->json([
-                    'estado' => 'error',
-                    'mensaje' => 'No se pudo generar embedding'
-                ], 500);
+                Log::error('Error FastAPI embedding', ['body' => $response->body()]);
+                return response()->json(['estado' => 'error', 'mensaje' => 'No se pudo generar embedding'], 500);
             }
 
             $embedding = $response->json('embedding');
 
             if (!$embedding || !is_array($embedding)) {
-
-                Log::error('❌ Embedding inválido', [
-                    'response' => $response->json()
-                ]);
-
-                return response()->json([
-                    'estado' => 'error',
-                    'mensaje' => 'Embedding inválido'
-                ], 500);
+                Log::error('Embedding inválido', ['response' => $response->json()]);
+                return response()->json(['estado' => 'error', 'mensaje' => 'Embedding inválido'], 500);
             }
-            $vector = '[' . implode(',', $embedding) . ']';
+
+            /* ─────────────────────────────
+             * 2. BÚSQUEDA POR SIMILITUD
+             * ───────────────────────────── */
+
+            $vector    = '[' . implode(',', $embedding) . ']';
 
             $resultado = DB::table('socio_embeddings as se')
                 ->join('socios as s', 's.id', '=', 'se.socio_id')
-                ->select(
-                    's.id',
-                    's.nombres',
-                    's.apellidos',
-                    's.ci',
-                    's.foto_path',
-                    's.activo',
-                    's.estado',
-                    's.deleted'
-                )
-                ->selectRaw("se.embedding <=> ? as distance", [$vector])
+                ->select('s.id', 's.nombres', 's.apellidos', 's.ci', 's.foto_path', 's.activo', 's.estado', 's.deleted')
+                ->selectRaw('se.embedding <=> ? as distance', [$vector])
                 ->whereNotNull('se.embedding')
                 ->orderBy('distance')
                 ->first();
 
-            // Convertir a objeto usable
             $socio = $resultado ? Socio::find($resultado->id) : null;
 
             if ($socio) {
                 $socio->distance = $resultado->distance;
-            }            
-            
+            }
+
             /* ─────────────────────────────
-             * 3. VALIDACIÓN NEGOCIO
+             * 3. VALIDACIÓN ESTADO SOCIO
              * ───────────────────────────── */
 
-            $validator = new AccesoSocioService();
-            $estado = $validator->validarSocio($socio);
-
-            if ($estado) {
-
-                Log::warning('⚠️ Socio rechazado por negocio', [
-                    'socio_id' => $socio->id,
-                    'motivo' => $estado['motivo']
+            if ($error = $this->accesoService->validarSocio($socio)) {
+                Log::warning('Socio rechazado por negocio', [
+                    'socio_id' => $socio?->id,
+                    'motivo'   => $error['motivo'],
                 ]);
-
                 IntentoAccesoFallido::create([
-                    'socio_id' => $socio->id,
+                    'socio_id'       => $socio->id,
                     'ip_dispositivo' => $request->ip(),
-                    'motivo_rechazo' => $estado['motivo'],
+                    'motivo_rechazo' => $error['motivo'],
                 ]);
-
-                return response()->json($estado, 403);
+                return response()->json($error, 403);
             }
 
             /* ─────────────────────────────
-             * 4. BLOQUEO 3 MIN
+             * 4. SECUENCIA ENTRADA/SALIDA
              * ───────────────────────────── */
 
-            $limite = now()->subMinutes(3);
-
-            $ultimo = Acceso::where('socio_id', $socio->id)
-                ->where('tipo', 'entrada')
-                ->where('created_at', '>=', $limite)
-                ->latest()
-                ->first();
-
-            if ($request->tipo === 'entrada' && $ultimo) {
-
-                Log::warning('⛔ Bloqueo temporal', [
+            if ($error = $this->accesoService->verificarSecuenciaAcceso($socio, $request->tipo)) {
+                Log::warning('Secuencia de acceso inválida', [
                     'socio_id' => $socio->id,
-                    'ultimo_acceso' => $ultimo->created_at
+                    'motivo'   => $error['motivo'],
                 ]);
-
-                return response()->json([
-                    'estado' => 'bloqueado',
-                    'mensaje' => 'Ya existe una entrada reciente (3 min)',
-                ], 429);
+                IntentoAccesoFallido::create([
+                    'socio_id'       => $socio->id,
+                    'ip_dispositivo' => $request->ip(),
+                    'motivo_rechazo' => $error['motivo'],
+                ]);
+                return response()->json($error, 422);
             }
 
             /* ─────────────────────────────
-             * 5. REGISTRO ACCESO
+             * 6. REGISTRO ACCESO
              * ───────────────────────────── */
 
             $acceso = Acceso::create([
-                'socio_id' => $socio->id,
-                'tipo' => $request->tipo,
+                'socio_id'            => $socio->id,
+                'tipo'                => $request->tipo,
                 'metodo_verificacion' => 'facial-pgvector',
-                'resultado_pdi' => 'aprobado',
-                'similitud_facial' => 1 - $socio->distance,
-                'ip_dispositivo' => $request->ip(),
-                'dispositivo_info' => $request->userAgent(),
+                'resultado_pdi'       => 'aprobado',
+                'similitud_facial'    => 1 - $socio->distance,
+                'ip_dispositivo'      => $request->ip(),
+                'dispositivo_info'    => $request->userAgent(),
             ]);
 
             /* ─────────────────────────────
-             * 6. NOTIFICACIÓN
+             * 7. NOTIFICACIÓN
              * ───────────────────────────── */
 
-            $admins = User::whereHas('role', function ($q) {
-                $q->where('nombre', 'admin');
-            })->get();
+            $this->accesoService->notificarAdmins($acceso);
 
-            foreach ($admins as $admin) {
-                $admin->notify(new AccesoRegistradoNotification($acceso));
-            }
-
-            Log::info('✅ Acceso registrado', [
+            Log::info('Acceso registrado', [
                 'socio_id' => $socio->id,
-                'acceso_id' => $acceso->id
+                'acceso_id' => $acceso->id,
             ]);
 
             return response()->json([
-                'estado'      => 'exito',
-                'id'          => $socio->id,
-                'nombres'     => $socio->nombres,
-                'apellidos'   => $socio->apellidos,
-                'ci'          => $socio->ci,
-                'foto_path'   => $socio->foto_path
-                    ? asset('storage/' . $socio->foto_path)
-                    : null,
-                'estado_socio'    => $socio->estado,
-                'tipo_membresia'  => $socio->membresiaActiva?->tipo ?? 'Sin membresía',
-                'estado_membresia'=> $socio->membresiaActiva?->estado ?? '---',
-                'fecha_fin'       => $socio->membresiaActiva?->fecha_fin,
-                'similaridad'     => round(1 - $socio->distance, 4),
-                'mensaje'         => 'Acceso concedido',
+                'estado'           => 'exito',
+                'id'               => $socio->id,
+                'nombres'          => $socio->nombres,
+                'apellidos'        => $socio->apellidos,
+                'ci'               => $socio->ci,
+                'foto_path'        => $socio->foto_path ? asset('storage/' . $socio->foto_path) : null,
+                'estado_socio'     => $socio->estado,
+                'tipo_membresia'   => $socio->membresiaActiva?->tipo ?? 'Sin membresía',
+                'estado_membresia' => $socio->membresiaActiva?->estado ?? '---',
+                'fecha_fin'        => $socio->membresiaActiva?->fecha_fin,
+                'similaridad'      => round(1 - $socio->distance, 4),
+                'mensaje'          => 'Acceso concedido',
             ]);
 
         } catch (\Exception $e) {
 
-            Log::error('🔥 ERROR GENERAL RECONOCIMIENTO', [
+            Log::error('ERROR GENERAL RECONOCIMIENTO', [
                 'mensaje' => $e->getMessage(),
-                'linea' => $e->getLine(),
-                'archivo' => $e->getFile()
+                'linea'   => $e->getLine(),
+                'archivo' => $e->getFile(),
             ]);
 
             return response()->json([
-                'estado' => 'error',
-                'mensaje' => $e->getMessage()
+                'estado'  => 'error',
+                'mensaje' => $e->getMessage(),
             ], 500);
         }
     }

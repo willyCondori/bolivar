@@ -134,6 +134,11 @@ export default function RegistrarSocio() {
             setError('fecha_nacimiento', 'La fecha de nacimiento es obligatoria.');
             return;
         }
+
+        if (data.ci.length < 5) {
+            setError('ci', 'El CI debe tener entre 5 y 8 dígitos.');
+            return;
+        }
         if (!pasosRequeridosCompletos) {
             alert('Completa todas las fotos requeridas antes de registrar.');
             return;
@@ -188,8 +193,18 @@ export default function RegistrarSocio() {
 
                                 <div className="form-group">
                                     <label className="label-style">CI</label>
-                                    <input type="text" value={data.ci} className="input-style" maxLength={8}
-                                        onChange={e => setData('ci', e.target.value.replace(/\D/g, ''))} />
+                                    <input type="text" value={data.ci}
+                                        className={`input-style ${errors.ci ? 'border-red-500/50' : ''}`}
+                                        maxLength={8}
+                                        onChange={e => {
+                                            const val = e.target.value.replace(/\D/g, '');
+                                            setData('ci', val);
+                                            if (val.length > 0 && val.length < 5) {
+                                                setError('ci', 'El CI debe tener entre 5 y 8 dígitos.');
+                                            } else {
+                                                clearErrors('ci');
+                                            }
+                                        }} />
                                     {errors.ci && <span className="err">{errors.ci}</span>}
                                 </div>
 
@@ -359,7 +374,7 @@ export default function RegistrarSocio() {
                         </div>
 
                         <button type="submit"
-                            disabled={processing || !pasosRequeridosCompletos || errors.password || errors.fecha_nacimiento}
+                            disabled={processing || !pasosRequeridosCompletos || errors.password || errors.fecha_nacimiento || errors.ci}
                             className="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-700 rounded-2xl font-black uppercase text-white shadow-xl disabled:opacity-50">
                             {processing ? 'Guardando...' : `Confirmar Registro ${!pasosRequeridosCompletos ? '(Fotos pendientes)' : ''}`}
                         </button>
